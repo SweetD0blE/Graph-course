@@ -9,12 +9,8 @@
 <body>
   <div class="app">
     <header class="header">
-      <a class="brand" href="#">
-        <span class="brand__logo" aria-hidden="true">
-          <span class="brand__node brand__node--one"></span>
-          <span class="brand__node brand__node--two"></span>
-          <span class="brand__node brand__node--three"></span>
-        </span>
+      <a class="brand" href="./index.html">
+        <img class="brand__logo-img" src="./assets/img/logo.svg" alt="" />
         <span>
           <strong>Graph Course</strong>
           <small>Графовая аналитика</small>
@@ -82,30 +78,30 @@
               <span class="status-pill">34%</span>
             </div>
 
-            <div class="graph-map">
-              <span class="edge edge--1"></span>
-              <span class="edge edge--2"></span>
-              <span class="edge edge--3"></span>
-              <span class="edge edge--4"></span>
-              <span class="edge edge--5"></span>
+            <div class="graph-map" data-graph-map>
+              <svg class="graph-lines" data-graph-lines aria-hidden="true"></svg>
 
-              <button class="graph-node graph-node--done graph-node--1" type="button">
+              <button class="graph-node graph-node--done graph-node--1" data-node="basics" type="button">
                 <span>1</span>
                 <small>Основы</small>
               </button>
-              <button class="graph-node graph-node--active graph-node--2" type="button">
+
+              <button class="graph-node graph-node--active graph-node--2" data-node="metrics" type="button">
                 <span>2</span>
                 <small>Метрики</small>
               </button>
-              <button class="graph-node graph-node--practice graph-node--3" type="button">
+
+              <button class="graph-node graph-node--practice graph-node--3" data-node="practice" type="button">
                 <span>P</span>
                 <small>Практика</small>
               </button>
-              <button class="graph-node graph-node--locked graph-node--4" type="button">
+
+              <button class="graph-node graph-node--locked graph-node--4" data-node="algorithms" type="button">
                 <span>3</span>
                 <small>Алгоритмы</small>
               </button>
-              <button class="graph-node graph-node--test graph-node--5" type="button">
+
+              <button class="graph-node graph-node--test graph-node--5" data-node="test" type="button">
                 <span>T</span>
                 <small>Тест</small>
               </button>

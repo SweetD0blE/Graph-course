@@ -127,59 +127,12 @@ body.light-theme .header {
   font-weight: 600;
 }
 
-.brand__logo {
-  position: relative;
+.brand__logo-img {
+  display: block;
+  flex: 0 0 auto;
   width: 46px;
   height: 46px;
-  border-radius: 17px;
-  background: linear-gradient(135deg, var(--primary), var(--violet));
-  box-shadow: 0 16px 36px rgba(85, 166, 255, 0.28);
-}
-
-.brand__logo::before,
-.brand__logo::after {
-  content: "";
-  position: absolute;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.78);
-  transform-origin: left center;
-}
-
-.brand__logo::before {
-  width: 20px;
-  left: 16px;
-  top: 17px;
-  transform: rotate(8deg);
-}
-
-.brand__logo::after {
-  width: 23px;
-  left: 18px;
-  top: 26px;
-  transform: rotate(121deg);
-}
-
-.brand__node {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #fff;
-}
-
-.brand__node--one {
-  left: 13px;
-  top: 14px;
-}
-
-.brand__node--two {
-  right: 12px;
-  top: 17px;
-}
-
-.brand__node--three {
-  left: 22px;
-  bottom: 12px;
+  object-fit: contain;
 }
 
 .nav {
@@ -399,60 +352,42 @@ p {
   background: rgba(74, 222, 128, 0.12);
 }
 
+/* Заменить в assets/css/styles.css стили graph-map / graph-lines / graph-node на этот блок */
+
+/* Карта графа */
 .graph-map {
   position: relative;
   height: 340px;
   margin: 22px 0;
+  isolation: isolate;
 }
 
-.edge {
+/* SVG-слой с линиями. Координаты линий теперь выставляет JS в пикселях. */
+.graph-lines {
   position: absolute;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  transform-origin: left center;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
 
-body.light-theme .edge {
-  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.25), transparent);
+.graph-lines line {
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
 
-.edge--1 {
-  left: 82px;
-  top: 91px;
-  width: 170px;
-  transform: rotate(22deg);
+body.light-theme .graph-lines line {
+  stroke: rgba(15, 23, 42, 0.22);
 }
 
-.edge--2 {
-  left: 236px;
-  top: 154px;
-  width: 165px;
-  transform: rotate(-37deg);
-}
-
-.edge--3 {
-  left: 112px;
-  top: 225px;
-  width: 205px;
-  transform: rotate(-18deg);
-}
-
-.edge--4 {
-  left: 93px;
-  top: 104px;
-  width: 142px;
-  transform: rotate(95deg);
-}
-
-.edge--5 {
-  left: 330px;
-  top: 101px;
-  width: 102px;
-  transform: rotate(78deg);
-}
-
+/* Узлы графа */
 .graph-node {
   position: absolute;
+  z-index: 1;
   width: 112px;
   height: 82px;
   border: 1px solid var(--line);
@@ -460,6 +395,38 @@ body.light-theme .edge {
   color: var(--text);
   background: var(--surface-solid);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.20);
+  transform: translate(-50%, -50%);
+}
+
+/*
+  Важно:
+  left/top ниже — это только позиция узлов.
+  Линии к ним больше НЕ прописываются руками.
+  JS сам берёт реальные координаты этих карточек.
+*/
+.graph-node--1 {
+  left: 19%;
+  top: 25%;
+}
+
+.graph-node--2 {
+  left: 50%;
+  top: 45%;
+}
+
+.graph-node--3 {
+  left: 24%;
+  top: 74%;
+}
+
+.graph-node--4 {
+  left: 84%;
+  top: 24%;
+}
+
+.graph-node--5 {
+  left: 78%;
+  top: 72%;
 }
 
 .graph-node span,
@@ -477,31 +444,6 @@ body.light-theme .edge {
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
-}
-
-.graph-node--1 {
-  left: 26px;
-  top: 52px;
-}
-
-.graph-node--2 {
-  left: 214px;
-  top: 119px;
-}
-
-.graph-node--3 {
-  left: 62px;
-  top: 214px;
-}
-
-.graph-node--4 {
-  right: 18px;
-  top: 42px;
-}
-
-.graph-node--5 {
-  right: 50px;
-  bottom: 28px;
 }
 
 .graph-node--done {
@@ -526,6 +468,26 @@ body.light-theme .edge {
 
 .graph-node--locked {
   opacity: 0.72;
+}
+
+.graph-node.is-selected {
+  outline: 2px solid rgba(85, 166, 255, 0.55);
+  outline-offset: 3px;
+}
+
+@media (max-width: 620px) {
+  .graph-map {
+    height: 300px;
+  }
+
+  .graph-node {
+    width: 92px;
+    height: 72px;
+  }
+
+  .graph-node span {
+    font-size: 20px;
+  }
 }
 
 .progress-widget {
@@ -730,6 +692,10 @@ body.light-theme .tag--primary {
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .graph-card {
+    min-height: 520px;
+  }
 }
 
 @media (max-width: 620px) {
@@ -743,21 +709,17 @@ body.light-theme .tag--primary {
   }
 
   .graph-card {
-    min-height: 500px;
+    min-height: 490px;
     padding: 18px;
+  }
+
+  .graph-map {
+    height: 300px;
   }
 
   .graph-node {
     width: 92px;
     height: 72px;
-  }
-
-  .graph-node--4 {
-    right: 0;
-  }
-
-  .graph-node--5 {
-    right: 12px;
   }
 
   .hero__meta {
