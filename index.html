@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Graph Course — Графовая аналитика</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a class="brand" href="#">
+        <span class="brand__logo" aria-hidden="true">
+          <span class="brand__node brand__node--one"></span>
+          <span class="brand__node brand__node--two"></span>
+          <span class="brand__node brand__node--three"></span>
+        </span>
+        <span>
+          <strong>Graph Course</strong>
+          <small>Графовая аналитика</small>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Главное меню">
+        <a href="#program">Программа</a>
+        <a href="#practice">Практика</a>
+        <a href="#progress">Прогресс</a>
+      </nav>
+
+      <div class="header__actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Переключить тему">
+          <span class="theme-toggle__icon" id="themeIcon">☀️</span>
+          <span id="themeText">Светлый фон</span>
+        </button>
+        <a class="btn btn--ghost" href="#">Войти</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero__content">
+          <div class="eyebrow">
+            <span class="eyebrow__dot"></span>
+            Внутренний учебный портал
+          </div>
+
+          <h1>Изучайте графовую аналитику как карту связанных знаний</h1>
+
+          <p class="hero__text">
+            Теория, практика на Python, итоговые тесты и личный прогресс в одном простом веб-приложении.
+            Начните с основ графов и постепенно переходите к алгоритмам, метрикам и прикладным кейсам.
+          </p>
+
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#program">Начать обучение</a>
+            <a class="btn btn--secondary" href="#program">Посмотреть программу</a>
+          </div>
+
+          <div class="hero__meta">
+            <div>
+              <strong>3</strong>
+              <span>раздела</span>
+            </div>
+            <div>
+              <strong>24</strong>
+              <span>темы</span>
+            </div>
+            <div>
+              <strong>7</strong>
+              <span>практик</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-label="Визуализация графа курса">
+          <div class="graph-card">
+            <div class="graph-card__top">
+              <div>
+                <span class="card-label">Learning graph</span>
+                <h2>Маршрут курса</h2>
+              </div>
+              <span class="status-pill">34%</span>
+            </div>
+
+            <div class="graph-map">
+              <span class="edge edge--1"></span>
+              <span class="edge edge--2"></span>
+              <span class="edge edge--3"></span>
+              <span class="edge edge--4"></span>
+              <span class="edge edge--5"></span>
+
+              <button class="graph-node graph-node--done graph-node--1" type="button">
+                <span>1</span>
+                <small>Основы</small>
+              </button>
+              <button class="graph-node graph-node--active graph-node--2" type="button">
+                <span>2</span>
+                <small>Метрики</small>
+              </button>
+              <button class="graph-node graph-node--practice graph-node--3" type="button">
+                <span>P</span>
+                <small>Практика</small>
+              </button>
+              <button class="graph-node graph-node--locked graph-node--4" type="button">
+                <span>3</span>
+                <small>Алгоритмы</small>
+              </button>
+              <button class="graph-node graph-node--test graph-node--5" type="button">
+                <span>T</span>
+                <small>Тест</small>
+              </button>
+            </div>
+
+            <div class="progress-widget" id="progress">
+              <div class="progress-widget__info">
+                <span>Общий прогресс</span>
+                <strong>34%</strong>
+              </div>
+              <div class="progress-bar">
+                <span style="width: 34%"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard" id="program">
+        <div class="section-heading">
+          <span class="card-label">Программа</span>
+          <h2>Разделы курса</h2>
+          <p>Карточки можно будет связать с БД: разделы, темы, статус прохождения и доступность тестов.</p>
+        </div>
+
+        <div class="course-grid">
+          <article class="course-card">
+            <div class="course-card__icon">01</div>
+            <h3>Основы графов</h3>
+            <p>Вершины, рёбра, направленные и взвешенные графы, способы представления.</p>
+            <div class="course-card__footer">
+              <span class="tag tag--success">80% пройдено</span>
+              <span>8 тем</span>
+            </div>
+          </article>
+
+          <article class="course-card course-card--featured">
+            <div class="course-card__icon">02</div>
+            <h3>Метрики и алгоритмы</h3>
+            <p>Центральность, кратчайшие пути, компоненты связности, сообщества и PageRank.</p>
+            <div class="course-card__footer">
+              <span class="tag tag--primary">текущий раздел</span>
+              <span>10 тем</span>
+            </div>
+          </article>
+
+          <article class="course-card">
+            <div class="course-card__icon">03</div>
+            <h3>Прикладная аналитика</h3>
+            <p>Рекомендации, анализ связей клиентов, fraud-сценарии и визуализация графов.</p>
+            <div class="course-card__footer">
+              <span class="tag">не начато</span>
+              <span>6 тем</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="work-area" id="practice">
+        <article class="next-card">
+          <span class="card-label">Следующая тема</span>
+          <h2>Центральность в графах</h2>
+          <p>
+            Разберите degree, closeness, betweenness и PageRank на примере сети взаимодействий.
+            После теории откройте ноутбук с практикой на NetworkX.
+          </p>
+          <div class="next-card__actions">
+            <a class="btn btn--primary" href="#">Открыть тему</a>
+            <a class="btn btn--secondary" href="#">Скачать notebook</a>
+          </div>
+        </article>
+
+        <aside class="side-panel">
+          <span class="card-label">Ближайший checkpoint</span>
+          <h3>Итоговый тест раздела 1</h3>
+          <p>10 вопросов · проходной балл 70%</p>
+
+          <div class="mini-list">
+            <div>
+              <span>Теория</span>
+              <strong>готово</strong>
+            </div>
+            <div>
+              <span>Практика</span>
+              <strong>2 из 3</strong>
+            </div>
+            <div>
+              <span>Тест</span>
+              <strong>доступен</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="./assets/js/script.js"></script>
+</body>
+</html>
