@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Регистрация — Graph Course</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/auth.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-form-side">
+      <a class="brand auth-brand" href="./index.html">
+        <span class="brand__logo" aria-hidden="true">
+          <span class="brand__node brand__node--one"></span>
+          <span class="brand__node brand__node--two"></span>
+          <span class="brand__node brand__node--three"></span>
+        </span>
+        <span>
+          <strong>Graph Course</strong>
+          <small>Графовая аналитика</small>
+        </span>
+      </a>
+
+      <article class="auth-card auth-card--wide">
+        <div class="auth-card__top">
+          <div>
+            <span class="card-label">Регистрация</span>
+            <h1>Создать аккаунт</h1>
+          </div>
+
+          <button class="theme-toggle auth-theme" id="themeToggle" type="button" aria-label="Переключить тему">
+            <span class="theme-toggle__icon" id="themeIcon">☀️</span>
+            <span id="themeText">Светлый фон</span>
+          </button>
+        </div>
+
+        <p class="auth-card__lead">
+          Заполните данные пользователя. Позже эти поля можно будет связать с таблицей пользователей в БД.
+        </p>
+
+        <form class="auth-form" id="registerForm" action="./index.html" method="get">
+          <div class="form-grid">
+            <label class="form-field">
+              <span>ФИО</span>
+              <input type="text" name="full_name" placeholder="Иванов Иван Иванович" autocomplete="name" required />
+            </label>
+
+            <label class="form-field">
+              <span>Email</span>
+              <input type="email" name="email" placeholder="ivan.ivanov@company.ru" autocomplete="email" required />
+            </label>
+
+            <label class="form-field">
+              <span>Логин</span>
+              <input type="text" name="login" placeholder="ivan.ivanov" autocomplete="username" required />
+            </label>
+
+            <label class="form-field">
+              <span>Подразделение</span>
+              <input type="text" name="department" placeholder="Аналитика данных" />
+            </label>
+
+            <label class="form-field">
+              <span>Пароль</span>
+              <input id="password" type="password" name="password" placeholder="Минимум 8 символов" autocomplete="new-password" minlength="8" required />
+            </label>
+
+            <label class="form-field">
+              <span>Повтор пароля</span>
+              <input id="passwordRepeat" type="password" name="password_repeat" placeholder="Повторите пароль" autocomplete="new-password" minlength="8" required />
+            </label>
+          </div>
+
+          <p class="form-message" id="formMessage" aria-live="polite"></p>
+
+          <label class="check-field check-field--policy">
+            <input type="checkbox" name="policy" required />
+            <span>Согласен с правилами прохождения курса и обработкой учебного прогресса</span>
+          </label>
+
+          <button class="btn btn--primary auth-submit" type="submit">Зарегистрироваться</button>
+        </form>
+
+        <p class="auth-bottom">
+          Уже есть аккаунт?
+          <a href="./login.html">Войти</a>
+        </p>
+      </article>
+    </section>
+
+    <section class="auth-visual-side" aria-label="Визуальный блок регистрации">
+      <div class="auth-visual-card">
+        <span class="card-label">Personal progress</span>
+        <h2>После регистрации появится личный кабинет</h2>
+        <p>
+          В БД можно будет хранить пользователей, роли, прогресс по темам, результаты тестов
+          и историю попыток.
+        </p>
+
+        <div class="register-preview">
+          <div class="preview-row">
+            <span>Пользователь</span>
+            <strong>создан</strong>
+          </div>
+          <div class="preview-row">
+            <span>Роль</span>
+            <strong>слушатель</strong>
+          </div>
+          <div class="preview-row">
+            <span>Прогресс</span>
+            <strong>0%</strong>
+          </div>
+          <div class="preview-progress">
+            <span></span>
+          </div>
+        </div>
+
+        <div class="auth-stats">
+          <div>
+            <strong>БД</strong>
+            <span>users</span>
+          </div>
+          <div>
+            <strong>ACL</strong>
+            <span>roles</span>
+          </div>
+          <div>
+            <strong>XP</strong>
+            <span>progress</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./assets/js/script.js"></script>
+  <script src="./assets/js/auth.js"></script>
+</body>
+</html>

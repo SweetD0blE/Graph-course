@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вход — Graph Course</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/auth.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-form-side">
+      <a class="brand auth-brand" href="./index.html">
+        <span class="brand__logo" aria-hidden="true">
+          <span class="brand__node brand__node--one"></span>
+          <span class="brand__node brand__node--two"></span>
+          <span class="brand__node brand__node--three"></span>
+        </span>
+        <span>
+          <strong>Graph Course</strong>
+          <small>Графовая аналитика</small>
+        </span>
+      </a>
+
+      <article class="auth-card">
+        <div class="auth-card__top">
+          <div>
+            <span class="card-label">Вход в систему</span>
+            <h1>Продолжить обучение</h1>
+          </div>
+
+          <button class="theme-toggle auth-theme" id="themeToggle" type="button" aria-label="Переключить тему">
+            <span class="theme-toggle__icon" id="themeIcon">☀️</span>
+            <span id="themeText">Светлый фон</span>
+          </button>
+        </div>
+
+        <p class="auth-card__lead">
+          Войдите в аккаунт, чтобы открыть личный прогресс, материалы курса и итоговые тесты.
+        </p>
+
+        <form class="auth-form" action="./index.html" method="get">
+          <label class="form-field">
+            <span>Логин или email</span>
+            <input type="text" name="login" placeholder="ivan.ivanov" autocomplete="username" required />
+          </label>
+
+          <label class="form-field">
+            <span>Пароль</span>
+            <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+          </label>
+
+          <div class="auth-row">
+            <label class="check-field">
+              <input type="checkbox" name="remember" />
+              <span>Запомнить меня</span>
+            </label>
+
+            <a class="auth-link" href="#">Забыли пароль?</a>
+          </div>
+
+          <button class="btn btn--primary auth-submit" type="submit">Войти</button>
+        </form>
+
+        <div class="auth-divider">
+          <span></span>
+          <small>или</small>
+          <span></span>
+        </div>
+
+        <p class="auth-bottom">
+          Нет аккаунта?
+          <a href="./register.html">Зарегистрироваться</a>
+        </p>
+      </article>
+    </section>
+
+    <section class="auth-visual-side" aria-label="Визуальный блок курса">
+      <div class="auth-visual-card">
+        <span class="card-label">Learning graph</span>
+        <h2>Ваш маршрут по графовой аналитике</h2>
+        <p>
+          Темы курса связаны между собой как вершины графа: теория, практика, тесты и прогресс
+          собираются в единую карту обучения.
+        </p>
+
+        <div class="auth-network">
+          <span class="auth-edge auth-edge--1"></span>
+          <span class="auth-edge auth-edge--2"></span>
+          <span class="auth-edge auth-edge--3"></span>
+          <span class="auth-edge auth-edge--4"></span>
+
+          <span class="auth-node auth-node--done auth-node--1">1</span>
+          <span class="auth-node auth-node--active auth-node--2">2</span>
+          <span class="auth-node auth-node--practice auth-node--3">P</span>
+          <span class="auth-node auth-node--locked auth-node--4">3</span>
+          <span class="auth-node auth-node--test auth-node--5">T</span>
+        </div>
+
+        <div class="auth-stats">
+          <div>
+            <strong>3</strong>
+            <span>раздела</span>
+          </div>
+          <div>
+            <strong>24</strong>
+            <span>темы</span>
+          </div>
+          <div>
+            <strong>7</strong>
+            <span>практик</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="./assets/js/script.js"></script>
+</body>
+</html>
