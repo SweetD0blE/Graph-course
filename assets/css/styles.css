@@ -54,7 +54,7 @@ body {
     radial-gradient(circle at 82% 4%, rgba(155, 124, 255, 0.23), transparent 34%),
     radial-gradient(circle at 70% 94%, rgba(56, 217, 217, 0.15), transparent 36%),
     var(--bg);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Liberation Sans", Arial, sans-serif;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
