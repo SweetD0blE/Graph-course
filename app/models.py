@@ -48,8 +48,95 @@ class Users(db.Model, UserMixin):
         return str(self.id)
 
 
+class Section(db.Model):
+    """Раздел курса (колонки «№» и «Раздел» в плане курса)."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.Integer, unique=True, nullable=False)
+    title = db.Column(db.String(255))
+    order = db.Column(db.Integer, default=0)
+
+    topics = db.relationship(
+        "Topic",
+        backref="section",
+        order_by="Topic.order",
+        cascade="all, delete-orphan",
+    )
+
+
+class Topic(db.Model):
+    """Тема внутри раздела. html_content — теория без блоков «Тест»."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    section_id = db.Column(
+        db.Integer, db.ForeignKey("section.id"), nullable=False
+    )
+    code = db.Column(db.String(20), unique=True, nullable=False)
+    title = db.Column(db.String(255))
+    content_form = db.Column(db.String(100))
+    assessment = db.Column(db.String(255))
+    outcome = db.Column(db.Text)
+    doc_filename = db.Column(db.String(255))
+    notebook_filename = db.Column(db.String(255))
+    html_content = db.Column(db.Text)
+    order = db.Column(db.Integer, default=0)
+
+    questions = db.relationship(
+        "Question",
+        backref="topic",
+        order_by="Question.order",
+        cascade="all, delete-orphan",
+    )
+
+
+class Question(db.Model):
+    """Вопрос мини-теста. block — номер блока «Тест» внутри документа."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(
+        db.Integer, db.ForeignKey("topic.id"), nullable=False
+    )
+    order = db.Column(db.Integer, default=0)
+    block = db.Column(db.Integer, default=1)
+    text = db.Column(db.Text, nullable=False)
+
+    options = db.relationship(
+        "AnswerOption",
+        backref="question",
+        order_by="AnswerOption.letter",
+        cascade="all, delete-orphan",
+    )
+
+
+class AnswerOption(db.Model):
+    """Вариант ответа. is_correct проставляет администратор в интерфейсе."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(
+        db.Integer, db.ForeignKey("question.id"), nullable=False
+    )
+    letter = db.Column(db.String(2), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    is_correct = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class TestAttempt(db.Model):
+    """Журнал попыток прохождения теста темы."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+    topic_id = db.Column(
+        db.Integer, db.ForeignKey("topic.id"), nullable=False
+    )
+    score = db.Column(db.Integer, nullable=False, default=0)
+    passed = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 def run_import_in_thread(app) -> None:
-    """Фоновый импорт сотрудников из SVA при старте приложения."""
+    """Фоновый импорт сотрудников и плана курса при старте приложения."""
     with app.app_context():
         try:
             from app.utils import load_sva_persons
@@ -58,8 +145,15 @@ def run_import_in_thread(app) -> None:
         except Exception as e:  # noqa: BLE001
             print(f"[Импорт сотрудников] Ошибка: {e}")
 
+        try:
+            from app.utils import load_course_plan
+
+            load_course_plan(db)
+        except Exception as e:  # noqa: BLE001
+            print(f"[Импорт плана курса] Ошибка: {e}")
+
 
 def register_background_tasks(app) -> None:
-    """Запускает фоновую задачу импорта сотрудников в отдельном потоке."""
+    """Запускает фоновую загрузку данных в отдельном потоке."""
     thread = threading.Thread(target=run_import_in_thread, args=(app,), daemon=True)
     thread.start()

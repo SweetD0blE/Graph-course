@@ -745,3 +745,48 @@ body.light-theme .tag--primary {
 .flash--danger  { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,.12); }
 .flash--warning { color: var(--orange); border-color: var(--orange); background: rgba(245,158,11,.12); }
 .flash--info    { color: var(--primary); border-color: var(--primary); background: rgba(99,102,241,.10); }
+
+/* Контент темы (рендер docx) и тесты */
+.topic-content { color: var(--text); line-height: 1.65; }
+.topic-content h1,
+.topic-content h2,
+.topic-content h3 { margin: 1.2em 0 .5em; color: var(--text); }
+.topic-content p { margin: .7em 0; }
+.topic-content ul,
+.topic-content ol { margin: .7em 0 .7em 1.4em; }
+.topic-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+  border-radius: var(--radius-md);
+}
+.topic-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+.topic-content th,
+.topic-content td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+}
+
+.quiz-question {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin: 16px 0;
+}
+.quiz-question legend { padding: 0 6px; color: var(--text); }
+.quiz-question--ok  { border-color: var(--green); }
+.quiz-question--bad { border-color: #ef4444; }
+.quiz-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  color: var(--text);
+  cursor: pointer;
+}
+.quiz-option input { margin-top: 4px; }

@@ -50,9 +50,13 @@ def create_app() -> Flask:
 
     from .routes.main_routes import main_bp
     from .routes.auth_routes import auth_bp
+    from .routes.course_routes import course_bp
+    from .routes.admin_routes import admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(course_bp)
+    app.register_blueprint(admin_bp)
 
     with app.app_context():
         db.create_all()

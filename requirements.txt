@@ -8,5 +8,7 @@ email-validator>=2.0.0
 python-dotenv>=1.0.1
 pandas>=2.0.0
 openpyxl>=3.1.2
+mammoth>=1.6
+beautifulsoup4>=4.12
 # pywin32 — только для боевого Windows-сервера (Outlook COM).
 # В Linux/локали не ставится; код подтверждения уходит в app.log (fallback).

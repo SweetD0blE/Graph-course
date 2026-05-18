@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Админ — ответы {{ topic.code }}{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Правильные ответы · {{ topic.code }}</span>
+    <h2>{{ topic.title }}</h2>
+    <p>Отметьте верные варианты (можно несколько на вопрос).
+       Вопрос засчитывается слушателю только при полном совпадении.</p>
+  </div>
+
+  <form method="post" class="next-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    {% for q in topic.questions %}
+      <fieldset class="quiz-question">
+        <legend><strong>{{ loop.index }}. {{ q.text }}</strong></legend>
+        {% for o in q.options %}
+          <label class="quiz-option">
+            <input type="checkbox" name="correct" value="{{ o.id }}"
+                   {% if o.is_correct %}checked{% endif %} />
+            <span><strong>{{ o.letter }}.</strong> {{ o.text }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+
+    <div class="next-card__actions" style="margin-top:24px">
+      <a class="btn btn--ghost" href="{{ url_for('admin.tests') }}">Назад</a>
+      <button class="btn btn--primary" type="submit">Сохранить</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
