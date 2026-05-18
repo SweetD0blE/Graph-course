@@ -9,6 +9,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.config import Settings
 from app.models import Section, Topic, Question, AnswerOption, TestAttempt
+from app.progress import passed_topic_ids, section_progress
 from app.app_logger import logger
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
@@ -18,7 +19,16 @@ course_bp = Blueprint('course', __name__, url_prefix='/course')
 @login_required
 def index():
     sections = Section.query.order_by(Section.order).all()
-    return render_template('course.html', sections=sections)
+    passed_ids = passed_topic_ids(current_user)
+    progress = {
+        s.id: section_progress(s, passed_ids) for s in sections
+    }
+    return render_template(
+        'course.html',
+        sections=sections,
+        progress=progress,
+        passed_ids=passed_ids,
+    )
 
 
 @course_bp.route('/topic/<int:topic_id>')
@@ -32,11 +42,13 @@ def topic(topic_id):
             os.path.join(Settings.COURSE_NB_DIR, topic.notebook_filename)
         )
     )
+    passed = topic_id in passed_topic_ids(current_user)
     return render_template(
         'topic.html',
         topic=topic,
         has_test=has_test,
         nb_available=nb_available,
+        passed=passed,
     )
 
 
@@ -58,6 +70,14 @@ def test(topic_id):
             'Тест ещё настраивается администратором — '
             'правильные ответы не заданы.',
             'warning',
+        )
+        return redirect(url_for('course.topic', topic_id=topic.id))
+
+    if topic.id in passed_topic_ids(current_user):
+        flash(
+            'Вы уже прошли этот тест на 100%. '
+            'Повторное прохождение недоступно.',
+            'info',
         )
         return redirect(url_for('course.topic', topic_id=topic.id))
 
