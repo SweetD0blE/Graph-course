@@ -8,41 +8,58 @@
     <p>{{ user_status }}</p>
   </div>
 
-  <article class="next-card">
+  <div class="hero__meta">
+    <div>
+      <strong>{{ overall }}%</strong>
+      <span>прогресс</span>
+    </div>
+    <div>
+      <strong>{{ passed_total }}</strong>
+      <span>сдано тем</span>
+    </div>
+    <div>
+      <strong>{{ attempts_total }}</strong>
+      <span>попыток</span>
+    </div>
+  </div>
+
+  <div class="section-heading" style="margin-top:32px">
+    <span class="card-label">По разделам</span>
+    <h2>Прогресс</h2>
+  </div>
+  <div class="course-grid">
+    {% for section in sections %}
+      {% set sp = progress[section.id] %}
+      <article class="course-card">
+        <div class="course-card__icon">{{ section.number }}</div>
+        <h3>{{ section.title }}</h3>
+        {% if sp.total_test == 0 %}
+          <p>Тем: {{ sp.topics }} · тест по разделу ещё не настроен</p>
+        {% else %}
+          <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }} · {{ sp.percent }}%</p>
+          <div class="progress-bar" style="margin-top:8px">
+            <span style="width: {{ sp.percent }}%"></span>
+          </div>
+        {% endif %}
+      </article>
+    {% else %}
+      <article class="course-card">
+        <h3>План курса ещё загружается</h3>
+        <p>Обновите страницу через минуту.</p>
+      </article>
+    {% endfor %}
+  </div>
+
+  <article class="next-card" style="margin-top:32px">
+    <div class="section-heading">
+      <span class="card-label">Реквизиты</span>
+    </div>
     <div class="mini-list">
       <div><span>Табельный номер</span><strong>{{ current_user.staff_number }}</strong></div>
       <div><span>Подразделение</span><strong>{{ current_user.department or '—' }}</strong></div>
       <div><span>Должность</span><strong>{{ current_user.position or '—' }}</strong></div>
       <div><span>Почта</span><strong>{{ current_user.email or '—' }}</strong></div>
       <div><span>Роль</span><strong>{{ user_status }}</strong></div>
-    </div>
-
-    <div class="section-heading" style="margin-top:28px">
-      <span class="card-label">Прогресс</span>
-    </div>
-    <div class="mini-list">
-      <div><span>Общий прогресс</span><strong>{{ overall }}%</strong></div>
-      <div><span>Сдано тем</span><strong>{{ passed_total }}</strong></div>
-      <div><span>Попыток</span><strong>{{ attempts_total }}</strong></div>
-    </div>
-
-    <div class="section-heading" style="margin-top:28px">
-      <span class="card-label">По разделам</span>
-    </div>
-    <div class="mini-list">
-      {% for section in sections %}
-        {% set sp = progress[section.id] %}
-        <div>
-          <strong>{{ section.title }}</strong>
-          {% if sp.total_test == 0 %}
-            <span>тест не настроен</span>
-          {% else %}
-            <span>{{ sp.passed }}/{{ sp.total_test }} · {{ sp.percent }}%</span>
-          {% endif %}
-        </div>
-      {% else %}
-        <div><strong>План курса ещё загружается</strong></div>
-      {% endfor %}
     </div>
 
     <div class="next-card__actions" style="margin-top:24px">

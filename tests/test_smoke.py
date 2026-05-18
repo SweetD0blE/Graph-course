@@ -1,7 +1,7 @@
 from sqlalchemy import text
 
 from app.extensions import db
-from app.models import Section, Topic, TestAttempt
+from app.models import Section, Topic, TestAttempt, Users
 from app.progress import is_gradable, section_progress, next_topic
 from tests.conftest import login
 
@@ -108,14 +108,44 @@ def test_home_guest_and_authed(seeded, client):
 
     login(client, ids["listener"])
     authed = client.get("/").get_data(as_text=True)
-    assert "Раздел A" in authed
+    assert "Следующая тема" in authed
 
 
-def test_profile_shows_progress(seeded, client):
+def test_home_no_duplicate_program(seeded, client):
+    _, ids = seeded
+    login(client, ids["listener"])
+    body = client.get("/").get_data(as_text=True)
+    assert 'id="program"' not in body
+    assert "Посмотреть программу" not in body
+    assert ">Прогресс<" not in body
+    assert "Следующая тема" in body
+
+
+def test_set_role_promote_demote(seeded, client):
+    _, ids = seeded
+    login(client, ids["admin"])
+    client.post(f'/admin/users/{ids["listener"]}/role')
+    with client.application.app_context():
+        assert db.session.get(Users, ids["listener"]).status == 1
+    client.post(f'/admin/users/{ids["listener"]}/role')
+    with client.application.app_context():
+        assert db.session.get(Users, ids["listener"]).status == 0
+
+
+def test_last_admin_protected(seeded, client):
+    _, ids = seeded
+    login(client, ids["admin"])
+    client.post(f'/admin/users/{ids["admin"]}/role')
+    with client.application.app_context():
+        assert db.session.get(Users, ids["admin"]).status == 1
+
+
+def test_profile_pretty(seeded, client):
     _, ids = seeded
     login(client, ids["listener"])
     r = client.get("/profile")
     assert r.status_code == 200
     body = r.get_data(as_text=True)
-    assert "%" in body
-    assert "К курсу" in body  # навигация/возврат из base-шаблона
+    assert "hero__meta" in body
+    assert "progress-bar" in body
+    assert "К курсу" in body
