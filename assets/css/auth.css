@@ -443,3 +443,11 @@ body.light-theme .preview-progress {
     flex-direction: column;
   }
 }
+
+.form-error {
+  display: block;
+  margin-top: 4px;
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: 800;
+}

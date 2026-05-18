@@ -1,0 +1,10 @@
+.env
+instance/
+__pycache__/
+*.pyc
+app.log
+flask_session/
+SVA_persons.xlsx
+*.zip
+venv/
+.venv/

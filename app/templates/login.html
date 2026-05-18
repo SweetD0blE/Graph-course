@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Вход — Graph Course</title>
-  <link rel="stylesheet" href="./assets/css/styles.css" />
-  <link rel="stylesheet" href="./assets/css/auth.css" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <link rel="stylesheet" href="/assets/css/auth.css" />
 </head>
 <body>
   <main class="auth-page">
     <section class="auth-form-side">
-      <a class="brand auth-brand" href="./index.html">
-        <img class="brand__logo-img" src="./assets/img/logo.svg" alt="" />
+      <a class="brand auth-brand" href="{{ url_for('main.index') }}">
+        <img class="brand__logo-img" src="/assets/img/logo.svg" alt="" />
         <span>
           <strong>Graph Course</strong>
           <small>Графовая аналитика</small>
@@ -27,41 +27,55 @@
         </div>
 
         <p class="auth-card__lead">
-          Войдите в аккаунт, чтобы открыть личный прогресс, материалы курса и итоговые тесты.
+          Войдите по табельному номеру и коду подтверждения из корпоративной почты.
         </p>
 
-        <form class="auth-form" action="./index.html" method="get">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash flash--{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form class="auth-form" method="post" action="{{ url_for('auth.login') }}">
+          {{ form.hidden_tag() }}
           <label class="form-field">
-            <span>Логин или email</span>
-            <input type="text" name="login" placeholder="ivan.ivanov" autocomplete="username" required />
+            <span>Табельный номер</span>
+            {{ form.staff_number(placeholder="10000001", autocomplete="username") }}
+            {% if form.staff_number.errors %}<small class="form-error">{{ form.staff_number.errors[0] }}</small>{% endif %}
           </label>
 
           <label class="form-field">
-            <span>Пароль</span>
-            <input type="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
+            <span>Код подтверждения</span>
+            {{ form.password(placeholder="6-значный код из письма", autocomplete="one-time-code") }}
+            {% if form.password.errors %}<small class="form-error">{{ form.password.errors[0] }}</small>{% endif %}
           </label>
 
-          <div class="auth-row">
-            <label class="check-field">
-              <input type="checkbox" name="remember" />
-              <span>Запомнить меня</span>
-            </label>
-
-            <a class="auth-link" href="#">Забыли пароль?</a>
-          </div>
-
-          <button class="btn btn--primary auth-submit" type="submit">Войти</button>
+          {{ form.submit(class="btn btn--primary auth-submit") }}
         </form>
 
         <div class="auth-divider">
           <span></span>
-          <small>или</small>
+          <small>не приходил код?</small>
           <span></span>
         </div>
 
+        <form class="auth-form" method="post" action="{{ url_for('auth.login') }}">
+          {{ recovery.hidden_tag() }}
+          <label class="form-field">
+            <span>Табельный номер для восстановления</span>
+            {{ recovery.staff_number(placeholder="10000001") }}
+            {% if recovery.staff_number.errors %}<small class="form-error">{{ recovery.staff_number.errors[0] }}</small>{% endif %}
+          </label>
+          {{ recovery.submit(class="btn btn--secondary auth-submit") }}
+        </form>
+
         <p class="auth-bottom">
           Нет аккаунта?
-          <a href="./register.html">Зарегистрироваться</a>
+          <a href="{{ url_for('auth.register') }}">Зарегистрироваться</a>
         </p>
       </article>
     </section>
@@ -103,6 +117,6 @@
     </section>
   </main>
 
-  <script src="./assets/js/script.js"></script>
+  <script src="/assets/js/script.js"></script>
 </body>
 </html>
