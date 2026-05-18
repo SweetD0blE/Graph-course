@@ -17,6 +17,7 @@
   --radius-xl: 34px;
   --radius-lg: 24px;
   --radius-md: 16px;
+  --option-checked: rgba(85, 166, 255, 0.16);
 }
 
 body.light-theme {
@@ -35,6 +36,7 @@ body.light-theme {
   --green: #059669;
   --orange: #d97706;
   --shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+  --option-checked: rgba(37, 99, 235, 0.10);
 }
 
 * {
@@ -795,10 +797,65 @@ body.light-theme .tag--primary {
 .quiz-question--bad { border-color: #ef4444; }
 .quiz-option {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 8px 0;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  margin: 8px 0;
   color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
   cursor: pointer;
+  transition: border-color .15s, background-color .15s;
 }
-.quiz-option input { margin-top: 4px; }
+
+.quiz-option:hover {
+  background: var(--surface-strong);
+  border-color: var(--primary);
+}
+
+/* Кастомный чекбокс под стилистику портала */
+.quiz-option input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: border-color .15s, background-color .15s;
+}
+
+.quiz-option input::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform .12s ease-in-out;
+  transform-origin: center;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background: #fff;
+}
+
+.quiz-option input:checked {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--violet));
+}
+
+.quiz-option input:checked::after { transform: scale(1); }
+
+.quiz-option input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Подсветка выбранной строки (не сливается с карточкой) */
+.quiz-option:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--option-checked);
+}
