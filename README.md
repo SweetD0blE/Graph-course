@@ -1,90 +1,225 @@
-# Graph Course — портал курса по графовой аналитике
+<div align="center">
 
-Внутренний учебный портал для сотрудников СВА. Frontend — статическая
-вёрстка (`assets/`), backend — Flask (по архитектуре проекта ProjectManager).
+# 🕸️ Graph Course
 
-## Возможности
+**Внутренний учебный портал по графовой аналитике**
 
-- Регистрация по рабочим данным (ФИО, табельный номер, отдел, должность,
-  корпоративная почта).
-- Вход по **табельному номеру + код подтверждения** из письма.
-- Повторная отправка кода (восстановление).
-- Импорт сотрудников из `SVA_persons.xlsx` в таблицу `Employee`.
-- Импорт плана курса из `content/course_plan.xlsx` (разделы и темы).
-- Конвертация docx-теории в HTML (`mammoth`), блоки «Тест» вырезаются
-  из текста и становятся интерактивным тестом.
-- Прохождение тестов: вопрос с одним/несколькими верными вариантами,
-  зачёт при полном совпадении, проходной — 100%, пересдача без
-  ограничений, попытки логируются (`TestAttempt`).
-- Скачивание практических `.ipynb` (кнопка на странице темы).
-- Хранение в SQLite (`instance/graph_course.db`).
+Теория · практика на Python · тесты · персональный прогресс — в одном лёгком Flask-приложении.
+
+`Python 3.11` · `Flask` · `SQLite (WAL)` · `Flask-Login` · `pytest`
+
+</div>
+
+---
+
+## 📌 О проекте
+
+Graph Course — корпоративный портал обучения для сотрудников СВА.
+Контент (план курса, теория, практические ноутбуки) импортируется из
+офисных файлов, тесты настраиваются администратором в интерфейсе,
+а каждый слушатель видит свой прогресс. Приложение рассчитано на работу
+в **изолированном контуре без доступа в интернет** — без внешних
+зависимостей в рантайме.
+
+---
+
+## ✨ Возможности
+
+### Для слушателя
+- Регистрация по рабочим данным с автодополнением ФИО из справочника
+  сотрудников.
+- Вход по **табельному номеру + одноразовый код** из письма.
+- Курс по разделам и темам: HTML-теория, скачивание практических
+  `.ipynb`, интерактивные тесты.
+- Тест засчитывается при **100 %**; после успешной сдачи повторное
+  прохождение закрыто (тема помечается «Пройдено»).
+- Правильные ответы на странице результата **не раскрываются** —
+  только статус по каждому вопросу.
+- При незачёте видно «Лучший результат: X %».
+- Личный кабинет: общий прогресс, разбивка по разделам, реквизиты.
+- Главная страница динамическая: следующая непройденная тема и
+  счётчики курса.
+
+### Для администратора
+- **Бутстрап**: первый пользователь, открывший `/admin/claim`,
+  становится админом (пока админов нет).
+- Настройка тестов: отметка верных вариантов по темам.
+- Реестр пользователей и прогресса; карточка пользователя с разбивкой
+  по темам.
+- **Сброс попыток** пользователя по теме (снимает блокировку
+  пересдачи).
+- **Назначение/снятие** роли администратора с защитой от удаления
+  последнего админа.
+
+### Платформа
+- Импорт сотрудников из `SVA_persons.xlsx` и плана курса из
+  `content/course_plan.xlsx`; конвертация docx-теории в HTML
+  (`mammoth`), блоки «Тест» вырезаются в интерактивный тест.
+- Многопользовательский режим: Werkzeug `threaded` + SQLite
+  **WAL / busy_timeout** — несколько человек проходят тесты
+  одновременно без блокировок и потери данных.
+- CSRF-защита форм, серверные сессии (Flask-Login + Flask-Session).
 - Логирование ключевых действий в `app.log`.
-- CSRF-защита форм, сессии (Flask-Login + Flask-Session).
+- Смоук-тесты на `pytest` и SessionStart-хук для веб-сессий.
 
-## Контент курса
+---
 
-- `content/course_plan.xlsx` — план курса (разделы, темы, материалы).
-- `content/docx/` — теория в Word (`.docx`).
-- `content/notebooks/` — практические Jupyter-блокноты (`.ipynb`).
+## 🧱 Стек
 
-Правильные ответы в исходных docx не размечены — их задаёт
-**администратор** в интерфейсе портала.
+| Слой | Технологии |
+|------|------------|
+| Backend | Flask, Flask-WTF, Flask-Login, Flask-SQLAlchemy, Flask-Session |
+| Данные | SQLite (WAL), SQLAlchemy ORM |
+| Импорт контента | pandas, openpyxl, mammoth, beautifulsoup4 |
+| Frontend | Серверные шаблоны Jinja2 + статические CSS/JS (`assets/`) |
+| Тесты | pytest |
+| Почта (прод) | Outlook COM через `pywin32` *(опционально, только Windows)* |
 
-### Бутстрап администратора
+---
 
-Первый пользователь, открывший `/admin/claim`, становится администратором
-(работает, только пока в системе нет ни одного админа). Далее:
-`/admin/tests` → выбрать тему → отметить верные варианты ответов.
-
-## Стек
-
-Python 3.11 · Flask · Flask-WTF · Flask-Login · Flask-SQLAlchemy ·
-Flask-Session · SQLite · pandas/openpyxl · mammoth · beautifulsoup4
-
-## Запуск локально
+## 🚀 Быстрый старт
 
 ```bash
 python -m venv venv
-source venv/bin/activate          # Windows: venv\Scripts\activate
+source venv/bin/activate            # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env              # задайте SECRET_KEY
-python scripts/gen_fake_sva.py    # фейковый SVA_persons.xlsx для теста
+cp .env.example .env                # задайте SECRET_KEY
+python scripts/gen_fake_sva.py      # тестовый SVA_persons.xlsx
 python run.py
 ```
 
-Открыть: `http://localhost:8000`
+Откройте **http://localhost:8000**
+
+Назначьте себя администратором: войдите и откройте `/admin/claim`,
+затем `/admin/tests` → выбрать тему → отметить верные варианты.
+
+---
+
+## ⚙️ Конфигурация (`.env`)
+
+| Переменная | Назначение | По умолчанию |
+|------------|------------|--------------|
+| `SECRET_KEY` | Ключ подписи сессий/CSRF | `dev-secret-key` |
+| `DATABASE_URL` | URI БД | `sqlite:///graph_course.db` |
+| `OUTLOOK_SENDER` | Адрес отправителя писем (прод) | — |
+| `SESSION_LIFETIME_DAYS` | Срок жизни сессии | `3` |
+| `COURSE_PLAN_PATH` / `COURSE_DOCX_DIR` / `COURSE_NB_DIR` | Переопределение путей контента | каталог `content/` |
+| `PORT` / `FLASK_DEBUG` | Порт и режим отладки | `8000` / `0` |
+
+> Опциональные `COURSE_*` в `.env.example` закомментированы намеренно —
+> пустое значение перетёрло бы дефолтный путь к контенту.
 
 ### Почта (код подтверждения)
 
-На боевом Windows-сервере СВА письма уходят через Outlook COM
-(`pywin32`, ставится отдельно — в `requirements.txt` закомментирован).
-Если Outlook недоступен (Linux, локальная разработка, контейнер) — код
-**не теряется**, а пишется в `app.log`:
+На боевом Windows-сервере письма уходят через Outlook COM (`pywin32`,
+в `requirements.txt` закомментирован). Если Outlook недоступен (Linux,
+локальная разработка, контейнер), код **не теряется** — он пишется в
+`app.log`:
 
 ```
-[MAIL→user@sva.example] Код подтверждения: Ваш логин: 10000001
-Ваш код подтверждения: 147215
+[MAIL→user@sva.example] Ваш логин: 10000001  Код подтверждения: 147215
 ```
 
-## Структура
+---
+
+## 📚 Контент курса
 
 ```
-run.py                 точка входа
-app/__init__.py        фабрика create_app()
-app/config.py          настройки из .env
-app/models.py          Employee, Users, Section, Topic, Question,
-                       AnswerOption, TestAttempt
-app/forms.py           формы регистрации/входа/восстановления
-app/utils.py           отправка кода, импорт SVA, импорт/парсинг курса
-app/app_logger.py      логирование в app.log
-app/routes/            main (/), auth, course (/course…), admin (/admin…)
-app/templates/         base + index, login, register, profile, course,
-                       topic, test, test_result, admin_* (Graph Course)
-assets/                CSS/JS/изображения (отдаются как /assets)
-content/               course_plan.xlsx, docx/, notebooks/
-scripts/gen_fake_sva.py  генерация тестового SVA_persons.xlsx
+content/
+├── course_plan.xlsx     план курса: разделы, темы, материалы
+├── docx/                теория в Word (.docx) → HTML при импорте
+└── notebooks/           практические Jupyter-блокноты (.ipynb)
 ```
 
-Не коммитятся (см. `.gitignore`): `.env`, `instance/`, `app.log`,
-`flask_session/`, `SVA_persons.xlsx`, `venv/`.
+Правильные ответы в исходных docx **не размечены** — их задаёт
+администратор в интерфейсе портала (`/admin/tests`).
+
+---
+
+## 🗺️ Маршруты
+
+| Префикс | Назначение |
+|---------|------------|
+| `/` | Лендинг: hero, счётчики, «Следующая тема» |
+| `/register`, `/login`, `/logout`, `/profile` | Аутентификация и личный кабинет |
+| `/course/` | Список разделов и тем |
+| `/course/topic/<id>` | Тема: теория, notebook, тест |
+| `/course/topic/<id>/test` | Прохождение теста (блокируется после 100 %) |
+| `/admin/claim` | Бутстрап первого администратора |
+| `/admin/tests`, `/admin/topic/<id>/answers` | Настройка верных ответов |
+| `/admin/users`, `/admin/users/<id>` | Реестр и карточка пользователя |
+| `/admin/users/<id>/reset/<topic_id>` | Сброс попыток по теме |
+| `/admin/users/<id>/role` | Назначить/снять администратора |
+
+---
+
+## 🗂️ Структура
+
+```
+run.py                  точка входа (threaded)
+app/__init__.py         фабрика create_app(), SQLite engine-опции
+app/config.py           настройки из .env
+app/extensions.py       db, login_manager, SQLite PRAGMA (WAL)
+app/models.py           Employee, Users, Section, Topic, Question,
+                        AnswerOption, TestAttempt + фоновый импорт
+app/progress.py         is_gradable, passed_topic_ids,
+                        section_progress, next_topic
+app/forms.py            формы регистрации/входа/восстановления
+app/utils.py            отправка кода, импорт SVA и плана курса
+app/app_logger.py       логирование в app.log
+app/routes/             main · auth · course · admin
+app/templates/          base + index, login, register, profile,
+                        course, topic, test, test_result, admin_*
+assets/                 CSS/JS/изображения (отдаются как /assets)
+content/                course_plan.xlsx, docx/, notebooks/
+scripts/gen_fake_sva.py генерация тестового SVA_persons.xlsx
+tests/                  conftest.py, test_smoke.py (pytest)
+.claude/settings.json   SessionStart-хук (установка зависимостей)
+```
+
+Не коммитятся (`.gitignore`): `.env`, `instance/`, `app.log`,
+`flask_session/`, `SVA_persons.xlsx`, `venv/`, `__pycache__/`.
+
+---
+
+## 🧪 Тесты
+
+```bash
+pip install -r requirements.txt   # включает pytest
+pytest -q
+```
+
+`tests/test_smoke.py` покрывает ключевые сценарии: расчёт прогресса,
+блокировку пересдачи и сброс попыток админом, гейтинг админки,
+назначение роли и защиту последнего админа, независимость попыток
+двух пользователей, режим WAL, главную и профиль. Изолированная БД во
+временном файле, CSRF в тестах отключён.
+
+---
+
+## 🔐 Роли и доступ
+
+- **Слушатель** (`status = 0`) — курс, тесты, личный кабинет.
+- **Администратор** (`status = 1`) — всё выше + панель администратора.
+
+Доступ к `/admin/*` закрыт декоратором `admin_required`. Снять роль у
+**последнего** администратора нельзя (защита от блокировки системы).
+
+---
+
+## 🛡️ Заметки по эксплуатации
+
+- Рассчитано на изолированный контур: рантайм не требует интернета.
+- SQLite в режиме WAL с `busy_timeout` выдерживает одновременную работу
+  нескольких пользователей на dev-сервере (`threaded=True`).
+- Для продакшена рекомендуется WSGI-сервер; учтите, что SQLite —
+  файловая БД (для высокой нагрузки рассмотрите PostgreSQL).
+
+---
+
+## 🌿 Разработка
+
+Активная ветка разработки: `claude/graph-analytics-backend-2lkYx`.
+Коммиты — осмысленные, по одному логическому изменению; перед пушем
+прогоняйте `pytest -q`.
