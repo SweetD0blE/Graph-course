@@ -42,13 +42,19 @@ def topic(topic_id):
             os.path.join(Settings.COURSE_NB_DIR, topic.notebook_filename)
         )
     )
-    passed = topic_id in passed_topic_ids(current_user)
+    attempts = TestAttempt.query.filter_by(
+        user_id=current_user.id, topic_id=topic_id
+    ).all()
+    passed = any(a.passed for a in attempts)
+    best = max((a.score for a in attempts), default=0)
     return render_template(
         'topic.html',
         topic=topic,
         has_test=has_test,
         nb_available=nb_available,
         passed=passed,
+        best=best,
+        attempts=len(attempts),
     )
 
 
@@ -97,6 +103,14 @@ def test(topic_id):
         total = len(gradable)
         score = round(correct / total * 100)
         passed = score == 100
+
+        if topic.id in passed_topic_ids(current_user):
+            flash(
+                'Вы уже прошли этот тест на 100%. '
+                'Повторное прохождение недоступно.',
+                'info',
+            )
+            return redirect(url_for('course.topic', topic_id=topic.id))
 
         attempt = TestAttempt(
             user_id=current_user.id,

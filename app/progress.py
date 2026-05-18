@@ -20,10 +20,11 @@ def passed_topic_ids(user):
 def next_topic(sections, passed_ids):
     for s in sections:
         for t in s.topics:
+            if not is_gradable(t):
+                continue
             if t.id in passed_ids:
                 continue
-            if t.html_content or is_gradable(t):
-                return t
+            return t
     return None
 
 
