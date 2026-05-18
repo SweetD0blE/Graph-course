@@ -34,11 +34,18 @@
               {{ row.last_at.strftime('%d.%m.%Y %H:%M') if row.last_at else '—' }}
             </span>
           </div>
-          <div style="display:flex;align-items:center">
+          <div style="display:flex;align-items:center;gap:12px">
             {% if row.passed %}
               <span class="tag tag--success">сдан</span>
             {% else %}
               <span class="tag tag--primary">не сдан</span>
+            {% endif %}
+            {% if row.attempts > 0 %}
+              <form method="post"
+                    action="{{ url_for('admin.reset_attempts', user_id=user.id, topic_id=row.topic.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button class="btn btn--ghost" type="submit">Сбросить</button>
+              </form>
             {% endif %}
           </div>
         </div>

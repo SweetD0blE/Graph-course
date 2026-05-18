@@ -2,7 +2,7 @@ from flask import Blueprint, render_template
 from flask_login import current_user
 
 from app.models import Section, Topic
-from app.progress import passed_topic_ids, section_progress
+from app.progress import passed_topic_ids, section_progress, next_topic
 
 main_bp = Blueprint('main', __name__)
 
@@ -19,6 +19,7 @@ def index():
     tt = sum(p['total_test'] for p in progress.values())
     pp = sum(p['passed'] for p in progress.values())
     overall = round(pp / tt * 100) if tt else 0
+    nxt = next_topic(sections, passed_ids)
     return render_template(
         'index.html',
         sections=sections,
@@ -28,4 +29,5 @@ def index():
         topics_total=topics_total,
         practices_total=practices_total,
         overall=overall,
+        next_topic=nxt,
     )

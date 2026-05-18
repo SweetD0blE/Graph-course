@@ -162,3 +162,23 @@ def user_card(user_id):
     return render_template(
         'admin_user.html', user=user, topic_rows=topic_rows
     )
+
+
+@admin_bp.route(
+    '/users/<int:user_id>/reset/<int:topic_id>', methods=['POST']
+)
+@admin_required
+def reset_attempts(user_id, topic_id):
+    user = Users.query.get_or_404(user_id)
+    Topic.query.get_or_404(topic_id)
+    TestAttempt.query.filter_by(
+        user_id=user.id, topic_id=topic_id
+    ).delete()
+    db.session.commit()
+    logger.info(
+        f'Попытки пользователя {user.staff_number} по теме '
+        f'{topic_id} сброшены администратором '
+        f'{current_user.staff_number}'
+    )
+    flash('Попытки по теме сброшены.', 'success')
+    return redirect(url_for('admin.user_card', user_id=user.id))

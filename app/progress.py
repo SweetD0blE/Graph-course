@@ -17,6 +17,16 @@ def passed_topic_ids(user):
     }
 
 
+def next_topic(sections, passed_ids):
+    for s in sections:
+        for t in s.topics:
+            if t.id in passed_ids:
+                continue
+            if t.html_content or is_gradable(t):
+                return t
+    return None
+
+
 def section_progress(section, passed_ids):
     test_topics = [t for t in section.topics if is_gradable(t)]
     total_test = len(test_topics)
