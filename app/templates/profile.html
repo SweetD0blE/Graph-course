@@ -1,99 +1,54 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Профиль — Graph Course</title>
-  <link rel="stylesheet" href="/assets/css/styles.css" />
-  <link rel="stylesheet" href="/assets/css/auth.css" />
-</head>
-<body>
-  <main class="auth-page">
-    <section class="auth-form-side">
-      <a class="brand auth-brand" href="{{ url_for('main.index') }}">
-        <img class="brand__logo-img" src="/assets/img/logo.svg" alt="" />
-        <span>
-          <strong>Graph Course</strong>
-          <small>Графовая аналитика</small>
-        </span>
-      </a>
+{% extends 'base.html' %}
+{% block title %}Профиль — {{ current_user.full_name }}{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Личный кабинет</span>
+    <h2>{{ current_user.full_name }}</h2>
+    <p>{{ user_status }}</p>
+  </div>
 
-      <article class="auth-card auth-card--wide">
-        <div class="auth-card__top">
-          <div>
-            <span class="card-label">Личный кабинет</span>
-            <h1>{{ current_user.full_name }}</h1>
-          </div>
-        </div>
+  <article class="next-card">
+    <div class="mini-list">
+      <div><span>Табельный номер</span><strong>{{ current_user.staff_number }}</strong></div>
+      <div><span>Подразделение</span><strong>{{ current_user.department or '—' }}</strong></div>
+      <div><span>Должность</span><strong>{{ current_user.position or '—' }}</strong></div>
+      <div><span>Почта</span><strong>{{ current_user.email or '—' }}</strong></div>
+      <div><span>Роль</span><strong>{{ user_status }}</strong></div>
+    </div>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flash-container">
-              {% for category, message in messages %}
-                <div class="flash flash--{{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
+    <div class="section-heading" style="margin-top:28px">
+      <span class="card-label">Прогресс</span>
+    </div>
+    <div class="mini-list">
+      <div><span>Общий прогресс</span><strong>{{ overall }}%</strong></div>
+      <div><span>Сдано тем</span><strong>{{ passed_total }}</strong></div>
+      <div><span>Попыток</span><strong>{{ attempts_total }}</strong></div>
+    </div>
 
-        <div class="register-preview">
-          <div class="preview-row">
-            <span>Табельный номер</span>
-            <strong>{{ current_user.staff_number }}</strong>
-          </div>
-          <div class="preview-row">
-            <span>Почта</span>
-            <strong>{{ current_user.email }}</strong>
-          </div>
-          <div class="preview-row">
-            <span>Подразделение</span>
-            <strong>{{ current_user.department }}</strong>
-          </div>
-          <div class="preview-row">
-            <span>Должность</span>
-            <strong>{{ current_user.position }}</strong>
-          </div>
-          <div class="preview-row">
-            <span>Роль</span>
-            <strong>{{ user_status }}</strong>
-          </div>
-        </div>
-
-        <div class="next-card__actions">
-          <a class="btn btn--primary" href="{{ url_for('main.index') }}">На главную</a>
-          <a class="btn btn--secondary" href="{{ url_for('auth.logout') }}">Выйти</a>
-        </div>
-      </article>
-    </section>
-
-    <section class="auth-visual-side" aria-label="Прогресс">
-      <div class="auth-visual-card">
-        <span class="card-label">Personal progress</span>
-        <h2>Ваш прогресс по курсу</h2>
-        <div class="auth-stats">
-          <div><strong>{{ overall }}%</strong><span>прогресс</span></div>
-          <div><strong>{{ passed_total }}</strong><span>сдано</span></div>
-          <div><strong>{{ attempts_total }}</strong><span>попыток</span></div>
-        </div>
-
-        <div class="register-preview">
-          {% for section in sections %}
-            <div class="preview-row">
-              <span>{{ section.title }}</span>
-              <strong>{{ progress[section.id].passed }}/{{ progress[section.id].total_test }}
-                · {{ progress[section.id].percent }}%</strong>
-            </div>
+    <div class="section-heading" style="margin-top:28px">
+      <span class="card-label">По разделам</span>
+    </div>
+    <div class="mini-list">
+      {% for section in sections %}
+        {% set sp = progress[section.id] %}
+        <div>
+          <strong>{{ section.title }}</strong>
+          {% if sp.total_test == 0 %}
+            <span>тест не настроен</span>
           {% else %}
-            <div class="preview-row">
-              <span>Курс</span>
-              <strong>план ещё загружается</strong>
-            </div>
-          {% endfor %}
+            <span>{{ sp.passed }}/{{ sp.total_test }} · {{ sp.percent }}%</span>
+          {% endif %}
         </div>
-      </div>
-    </section>
-  </main>
+      {% else %}
+        <div><strong>План курса ещё загружается</strong></div>
+      {% endfor %}
+    </div>
 
-  <script src="/assets/js/script.js"></script>
-</body>
-</html>
+    <div class="next-card__actions" style="margin-top:24px">
+      <a class="btn btn--ghost" href="{{ url_for('course.index') }}">К курсу</a>
+      <a class="btn btn--secondary" href="{{ url_for('auth.logout') }}">Выйти</a>
+    </div>
+  </article>
+</section>
+{% endblock %}

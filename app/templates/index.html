@@ -159,11 +159,15 @@
             <div class="section-heading" style="margin-top:32px">
               <span class="card-label">Раздел {{ section.number }}</span>
               <h2>{{ section.title }}</h2>
-              <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }}
-                 · {{ sp.percent }}%</p>
-              <div class="progress-bar" style="max-width:320px;margin-top:8px">
-                <span style="width: {{ sp.percent }}%"></span>
-              </div>
+              {% if sp.total_test == 0 %}
+                <p>Тем: {{ sp.topics }} · тест по разделу ещё не настроен</p>
+              {% else %}
+                <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }}
+                   · {{ sp.percent }}%</p>
+                <div class="progress-bar" style="max-width:320px;margin-top:8px">
+                  <span style="width: {{ sp.percent }}%"></span>
+                </div>
+              {% endif %}
             </div>
 
             <div class="course-grid">

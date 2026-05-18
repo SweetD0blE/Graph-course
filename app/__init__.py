@@ -26,6 +26,9 @@ def create_app() -> Flask:
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = (
         Settings.SQLALCHEMY_TRACK_MODIFICATIONS
     )
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'check_same_thread': False, 'timeout': 30}
+    }
     app.config['SESSION_TYPE'] = Settings.SESSION_TYPE
     app.config['SESSION_PERMANENT'] = Settings.SESSION_PERMANENT
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(
