@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Профиль — Graph Course</title>
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <link rel="stylesheet" href="/assets/css/auth.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-form-side">
+      <a class="brand auth-brand" href="{{ url_for('main.index') }}">
+        <img class="brand__logo-img" src="/assets/img/logo.svg" alt="" />
+        <span>
+          <strong>Graph Course</strong>
+          <small>Графовая аналитика</small>
+        </span>
+      </a>
+
+      <article class="auth-card auth-card--wide">
+        <div class="auth-card__top">
+          <div>
+            <span class="card-label">Личный кабинет</span>
+            <h1>{{ current_user.full_name }}</h1>
+          </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash flash--{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="register-preview">
+          <div class="preview-row">
+            <span>Табельный номер</span>
+            <strong>{{ current_user.staff_number }}</strong>
+          </div>
+          <div class="preview-row">
+            <span>Почта</span>
+            <strong>{{ current_user.email }}</strong>
+          </div>
+          <div class="preview-row">
+            <span>Подразделение</span>
+            <strong>{{ current_user.department }}</strong>
+          </div>
+          <div class="preview-row">
+            <span>Должность</span>
+            <strong>{{ current_user.position }}</strong>
+          </div>
+          <div class="preview-row">
+            <span>Роль</span>
+            <strong>{{ user_status }}</strong>
+          </div>
+        </div>
+
+        <div class="next-card__actions">
+          <a class="btn btn--primary" href="{{ url_for('main.index') }}">На главную</a>
+          <a class="btn btn--secondary" href="{{ url_for('auth.logout') }}">Выйти</a>
+        </div>
+      </article>
+    </section>
+
+    <section class="auth-visual-side" aria-label="Прогресс">
+      <div class="auth-visual-card">
+        <span class="card-label">Personal progress</span>
+        <h2>Ваш прогресс по курсу</h2>
+        <p>Здесь появятся пройденные темы, результаты тестов и история попыток.</p>
+        <div class="auth-stats">
+          <div><strong>0%</strong><span>прогресс</span></div>
+          <div><strong>0</strong><span>тестов</span></div>
+          <div><strong>0</strong><span>практик</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/assets/js/script.js"></script>
+</body>
+</html>

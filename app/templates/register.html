@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Регистрация — Graph Course</title>
-  <link rel="stylesheet" href="./assets/css/styles.css" />
-  <link rel="stylesheet" href="./assets/css/auth.css" />
+  <link rel="stylesheet" href="/assets/css/styles.css" />
+  <link rel="stylesheet" href="/assets/css/auth.css" />
 </head>
 <body>
   <main class="auth-page">
     <section class="auth-form-side">
-      <a class="brand auth-brand" href="./index.html">
-        <img class="brand__logo-img" src="./assets/img/logo.svg" alt="" />
+      <a class="brand auth-brand" href="{{ url_for('main.index') }}">
+        <img class="brand__logo-img" src="/assets/img/logo.svg" alt="" />
         <span>
           <strong>Graph Course</strong>
           <small>Графовая аналитика</small>
@@ -27,55 +27,66 @@
         </div>
 
         <p class="auth-card__lead">
-          Заполните данные пользователя. Позже эти поля можно будет связать с таблицей пользователей в БД.
+          Укажите рабочие данные сотрудника СВА. Код подтверждения придёт
+          на корпоративную почту — им вы войдёте в систему.
         </p>
 
-        <form class="auth-form" id="registerForm" action="./index.html" method="get">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-container">
+              {% for category, message in messages %}
+                <div class="flash flash--{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <form class="auth-form" id="registerForm" method="post" action="{{ url_for('auth.register') }}">
+          {{ form.hidden_tag() }}
           <div class="form-grid">
             <label class="form-field">
               <span>ФИО</span>
-              <input type="text" name="full_name" placeholder="Иванов Иван Иванович" autocomplete="name" required />
+              {{ form.full_name(placeholder="Иванов Иван Иванович", autocomplete="name") }}
+              {% if form.full_name.errors %}<small class="form-error">{{ form.full_name.errors[0] }}</small>{% endif %}
             </label>
 
             <label class="form-field">
-              <span>Email</span>
-              <input type="email" name="email" placeholder="ivan.ivanov@company.ru" autocomplete="email" required />
+              <span>Табельный номер</span>
+              {{ form.staff_number(placeholder="10000001", autocomplete="username") }}
+              {% if form.staff_number.errors %}<small class="form-error">{{ form.staff_number.errors[0] }}</small>{% endif %}
             </label>
 
             <label class="form-field">
-              <span>Логин</span>
-              <input type="text" name="login" placeholder="ivan.ivanov" autocomplete="username" required />
+              <span>Корпоративная почта</span>
+              {{ form.email(placeholder="ivan.ivanov@sva.example", autocomplete="email") }}
+              {% if form.email.errors %}<small class="form-error">{{ form.email.errors[0] }}</small>{% endif %}
             </label>
 
             <label class="form-field">
               <span>Подразделение</span>
-              <input type="text" name="department" placeholder="Аналитика данных" />
+              {{ form.department(placeholder="Отдел аудита") }}
+              {% if form.department.errors %}<small class="form-error">{{ form.department.errors[0] }}</small>{% endif %}
             </label>
 
             <label class="form-field">
-              <span>Пароль</span>
-              <input id="password" type="password" name="password" placeholder="Минимум 8 символов" autocomplete="new-password" minlength="8" required />
-            </label>
-
-            <label class="form-field">
-              <span>Повтор пароля</span>
-              <input id="passwordRepeat" type="password" name="password_repeat" placeholder="Повторите пароль" autocomplete="new-password" minlength="8" required />
+              <span>Должность</span>
+              {{ form.position(placeholder="Аналитик данных") }}
+              {% if form.position.errors %}<small class="form-error">{{ form.position.errors[0] }}</small>{% endif %}
             </label>
           </div>
 
-          <p class="form-message" id="formMessage" aria-live="polite"></p>
-
           <label class="check-field check-field--policy">
-            <input type="checkbox" name="policy" required />
+            {{ form.policy() }}
             <span>Согласен с правилами прохождения курса и обработкой учебного прогресса</span>
           </label>
+          {% if form.policy.errors %}<small class="form-error">Подтвердите согласие с правилами</small>{% endif %}
 
           <button class="btn btn--primary auth-submit" type="submit">Зарегистрироваться</button>
         </form>
 
         <p class="auth-bottom">
           Уже есть аккаунт?
-          <a href="./login.html">Войти</a>
+          <a href="{{ url_for('auth.login') }}">Войти</a>
         </p>
       </article>
     </section>
@@ -85,8 +96,8 @@
         <span class="card-label">Personal progress</span>
         <h2>После регистрации появится личный кабинет</h2>
         <p>
-          В БД можно будет хранить пользователей, роли, прогресс по темам, результаты тестов
-          и историю попыток.
+          В БД хранятся пользователи, роли, прогресс по темам, результаты тестов
+          и история попыток.
         </p>
 
         <div class="register-preview">
@@ -125,7 +136,6 @@
     </section>
   </main>
 
-  <script src="./assets/js/script.js"></script>
-  <script src="./assets/js/auth.js"></script>
+  <script src="/assets/js/script.js"></script>
 </body>
 </html>

@@ -727,3 +727,21 @@ body.light-theme .tag--primary {
     grid-template-columns: 1fr;
   }
 }
+
+/* Flash-уведомления (backend) */
+.flash-container {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.flash {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+.flash--success { color: var(--green); border-color: var(--green); background: rgba(74,222,128,.12); }
+.flash--danger  { color: #ef4444; border-color: #ef4444; background: rgba(239,68,68,.12); }
+.flash--warning { color: var(--orange); border-color: var(--orange); background: rgba(245,158,11,.12); }
+.flash--info    { color: var(--primary); border-color: var(--primary); background: rgba(99,102,241,.10); }

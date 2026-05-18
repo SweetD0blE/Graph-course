@@ -1,0 +1,175 @@
+import random
+import string
+
+from flask import (
+    Blueprint, render_template, redirect, url_for, session, flash, request
+)
+from flask_login import (
+    login_user, logout_user, current_user, login_required
+)
+
+from app.extensions import db
+from app.forms import LoginForm, RegisterForm, PasswordRecovery
+from app.models import Users
+from app.utils import send_internal_mail
+from app.app_logger import logger
+
+auth_bp = Blueprint('auth', __name__)
+
+
+def generate_code(length: int = 6) -> str:
+    """Случайный числовой код длиной length."""
+    return ''.join(random.choices(string.digits, k=length))
+
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    recovery_form = PasswordRecovery()
+
+    if current_user.is_authenticated:
+        flash('Вы уже авторизованы.', 'info')
+        return redirect(url_for('main.index'))
+
+    # Вход по табельному номеру + коду
+    if form.submit.data and form.validate_on_submit():
+        staff_number = form.staff_number.data
+        code = form.password.data
+
+        user = Users.query.filter_by(
+            staff_number=staff_number, verification_code=code
+        ).first()
+
+        if user:
+            login_user(user)
+            user.is_verified = True
+            db.session.commit()
+            logger.info(f'Пользователь {user.staff_number} вошёл в систему')
+            flash('Вы успешно вошли.', 'success')
+            return redirect(url_for('main.index'))
+
+        logger.warning(f'Неудачный вход по табельному {staff_number}')
+        flash('Ошибка авторизации, проверьте табельный номер и код.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    # Повторная отправка кода
+    if recovery_form.submit.data and recovery_form.validate_on_submit():
+        user = Users.query.filter_by(
+            staff_number=recovery_form.staff_number.data
+        ).first()
+
+        if not user:
+            flash(
+                'Аккаунт не найден. Проверьте табельный номер или '
+                'зарегистрируйтесь.',
+                'warning',
+            )
+            return redirect(url_for('auth.login'))
+
+        send_internal_mail(
+            user.email,
+            f'Ваш логин: {user.staff_number}\n'
+            f'Ваш код подтверждения: {user.verification_code}',
+        )
+        logger.info(
+            f'Повторно выслан код пользователю {user.staff_number} '
+            f'на {user.email}'
+        )
+        flash('Код подтверждения повторно выслан на почту.', 'info')
+        return redirect(url_for('auth.login'))
+
+    return render_template('login.html', form=form, recovery=recovery_form)
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        flash('Вы уже авторизованы.', 'info')
+        return redirect(url_for('main.index'))
+
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        full_name = form.full_name.data
+        staff_number = form.staff_number.data
+        department = form.department.data
+        position = form.position.data
+        email = form.email.data
+
+        existing_user = Users.query.filter(
+            (Users.email == email) | (Users.staff_number == staff_number)
+        ).first()
+
+        if existing_user:
+            flash(
+                'У вас уже есть аккаунт. Если забыли код — восстановите его '
+                'на странице входа.',
+                'danger',
+            )
+            return redirect(url_for('auth.login'))
+
+        code = generate_code()
+        user = Users(
+            full_name=full_name,
+            staff_number=staff_number,
+            department=department,
+            position=position,
+            email=email,
+            verification_code=code,
+            is_verified=False,
+        )
+        db.session.add(user)
+        db.session.commit()
+        logger.info(
+            f'Зарегистрирован новый пользователь: {staff_number} ({email})'
+        )
+
+        send_internal_mail(
+            email,
+            f'Ваш логин: {staff_number}\nВаш код подтверждения: {code}',
+        )
+
+        flash(
+            'Регистрация успешна! Код подтверждения отправлен на '
+            'корпоративную почту.',
+            'success',
+        )
+        return redirect(url_for('auth.login'))
+
+    return render_template('register.html', form=form)
+
+
+@auth_bp.route('/profile')
+@login_required
+def profile():
+    user_status = (
+        'Администратор' if current_user.status == 1 else 'Слушатель'
+    )
+    return render_template('profile.html', user_status=user_status)
+
+
+@auth_bp.route('/logout')
+@login_required
+def logout():
+    staff_number = current_user.staff_number
+    current_user.is_verified = False
+    db.session.commit()
+    logout_user()
+    session.clear()
+    logger.info(f'Пользователь {staff_number} вышел из системы')
+    flash('Вы вышли из системы.', 'info')
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.before_request
+def check_user_verified():
+    """Сбрасывает сессию неподтверждённого пользователя."""
+    if request.endpoint == 'static':
+        return
+    if request.method == 'POST':
+        return
+    if current_user.is_authenticated and not current_user.is_verified:
+        logout_user()
+        session.clear()
+        flash('Ваша сессия была сброшена.', 'warning')
+        return redirect(url_for('auth.login'))
