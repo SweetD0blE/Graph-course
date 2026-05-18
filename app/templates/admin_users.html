@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Админ — пользователи{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Администрирование</span>
+    <h2>Пользователи и прогресс</h2>
+    <p>Список зарегистрированных пользователей и прохождение тем.</p>
+  </div>
+
+  <article class="next-card">
+    <div class="mini-list">
+      {% for row in rows %}
+        <div>
+          <div>
+            <strong>{{ row.user.full_name or '—' }}</strong>
+            <span style="display:block">
+              {{ row.user.staff_number }} ·
+              {{ row.user.department or 'без подразделения' }}
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            {% if row.progress == 100 %}
+              <span class="tag tag--success">{{ row.passed }}/{{ row.total }} тем · {{ row.progress }}%</span>
+            {% else %}
+              <span class="tag tag--primary">{{ row.passed }}/{{ row.total }} тем · {{ row.progress }}%</span>
+            {% endif %}
+            <span>попыток: {{ row.attempts }}</span>
+            <a class="btn btn--ghost" href="{{ url_for('admin.user_card', user_id=row.user.id) }}">Карточка</a>
+          </div>
+        </div>
+      {% else %}
+        <div><strong>Пока нет зарегистрированных пользователей.</strong></div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+{% endblock %}
