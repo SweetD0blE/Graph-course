@@ -29,7 +29,7 @@
 
       <nav class="nav" aria-label="Главное меню">
         <a href="#program">Программа</a>
-        <a href="#practice">Практика</a>
+        <a href="{{ url_for('course.index') }}">Обучение</a>
         <a href="#progress">Прогресс</a>
       </nav>
 
@@ -69,15 +69,15 @@
 
           <div class="hero__meta">
             <div>
-              <strong>3</strong>
-              <span>раздела</span>
+              <strong>{{ sections_total }}</strong>
+              <span>разделов</span>
             </div>
             <div>
-              <strong>24</strong>
-              <span>темы</span>
+              <strong>{{ topics_total }}</strong>
+              <span>тем</span>
             </div>
             <div>
-              <strong>7</strong>
+              <strong>{{ practices_total }}</strong>
               <span>практик</span>
             </div>
           </div>
@@ -90,7 +90,11 @@
                 <span class="card-label">Learning graph</span>
                 <h2>Маршрут курса</h2>
               </div>
-              <span class="status-pill">34%</span>
+              {% if current_user.is_authenticated %}
+                <span class="status-pill">{{ overall }}%</span>
+              {% else %}
+                <a class="status-pill" href="{{ url_for('auth.login') }}">Войти</a>
+              {% endif %}
             </div>
 
             <div class="graph-map" data-graph-map>
@@ -98,12 +102,12 @@
 
               <button class="graph-node graph-node--done graph-node--1" data-node="basics" type="button">
                 <span>1</span>
-                <small>Основы</small>
+                <small>{{ sections[0].title if sections|length > 0 else 'Раздел 1' }}</small>
               </button>
 
               <button class="graph-node graph-node--active graph-node--2" data-node="metrics" type="button">
                 <span>2</span>
-                <small>Метрики</small>
+                <small>{{ sections[1].title if sections|length > 1 else 'Раздел 2' }}</small>
               </button>
 
               <button class="graph-node graph-node--practice graph-node--3" data-node="practice" type="button">
@@ -113,7 +117,7 @@
 
               <button class="graph-node graph-node--locked graph-node--4" data-node="algorithms" type="button">
                 <span>3</span>
-                <small>Алгоритмы</small>
+                <small>{{ sections[2].title if sections|length > 2 else 'Раздел 3' }}</small>
               </button>
 
               <button class="graph-node graph-node--test graph-node--5" data-node="test" type="button">
@@ -123,13 +127,20 @@
             </div>
 
             <div class="progress-widget" id="progress">
-              <div class="progress-widget__info">
-                <span>Общий прогресс</span>
-                <strong>34%</strong>
-              </div>
-              <div class="progress-bar">
-                <span style="width: 34%"></span>
-              </div>
+              {% if current_user.is_authenticated %}
+                <div class="progress-widget__info">
+                  <span>Общий прогресс</span>
+                  <strong>{{ overall }}%</strong>
+                </div>
+                <div class="progress-bar">
+                  <span style="width: {{ overall }}%"></span>
+                </div>
+              {% else %}
+                <div class="progress-widget__info">
+                  <span>Прогресс</span>
+                  <a href="{{ url_for('auth.login') }}">Войдите, чтобы видеть прогресс</a>
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>
@@ -139,40 +150,56 @@
         <div class="section-heading">
           <span class="card-label">Программа</span>
           <h2>Разделы курса</h2>
-          <p>Карточки можно будет связать с БД: разделы, темы, статус прохождения и доступность тестов.</p>
+          <p>Теория, практика и тестирование по графовой аналитике.</p>
         </div>
 
-        <div class="course-grid">
-          <article class="course-card">
-            <div class="course-card__icon">01</div>
-            <h3>Основы графов</h3>
-            <p>Вершины, рёбра, направленные и взвешенные графы, способы представления.</p>
-            <div class="course-card__footer">
-              <span class="tag tag--success">80% пройдено</span>
-              <span>8 тем</span>
+        {% if current_user.is_authenticated %}
+          {% for section in sections %}
+            {% set sp = progress[section.id] %}
+            <div class="section-heading" style="margin-top:32px">
+              <span class="card-label">Раздел {{ section.number }}</span>
+              <h2>{{ section.title }}</h2>
+              <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }}
+                 · {{ sp.percent }}%</p>
+              <div class="progress-bar" style="max-width:320px;margin-top:8px">
+                <span style="width: {{ sp.percent }}%"></span>
+              </div>
             </div>
-          </article>
 
-          <article class="course-card course-card--featured">
-            <div class="course-card__icon">02</div>
-            <h3>Метрики и алгоритмы</h3>
-            <p>Центральность, кратчайшие пути, компоненты связности, сообщества и PageRank.</p>
-            <div class="course-card__footer">
-              <span class="tag tag--primary">текущий раздел</span>
-              <span>10 тем</span>
+            <div class="course-grid">
+              {% for topic in section.topics %}
+                <article class="course-card">
+                  <div class="course-card__icon">{{ topic.code }}</div>
+                  <h3>{{ topic.title }}</h3>
+                  <p>{{ topic.outcome or '' }}</p>
+                  <div class="course-card__footer">
+                    <span>
+                      {% if topic.id in passed_ids %}<span class="tag tag--success">Пройдено</span>{% endif %}
+                      {% if topic.html_content %}<span class="tag tag--success">теория</span>{% endif %}
+                      {% if topic.questions %}<span class="tag tag--primary">тест</span>{% endif %}
+                      {% if topic.notebook_filename %}<span class="tag">notebook</span>{% endif %}
+                    </span>
+                    <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">Открыть</a>
+                  </div>
+                </article>
+              {% endfor %}
             </div>
-          </article>
-
-          <article class="course-card">
-            <div class="course-card__icon">03</div>
-            <h3>Прикладная аналитика</h3>
-            <p>Рекомендации, анализ связей клиентов, fraud-сценарии и визуализация графов.</p>
-            <div class="course-card__footer">
-              <span class="tag">не начато</span>
-              <span>6 тем</span>
-            </div>
-          </article>
-        </div>
+          {% else %}
+            <p>План курса ещё загружается. Обновите страницу через минуту.</p>
+          {% endfor %}
+        {% else %}
+          <div class="course-grid">
+            <article class="course-card">
+              <div class="course-card__icon">?</div>
+              <h3>Войдите, чтобы открыть программу</h3>
+              <p>Разделы курса, темы и ваш личный прогресс доступны после входа по табельному номеру.</p>
+              <div class="course-card__footer">
+                <span class="tag tag--primary">требуется вход</span>
+                <a class="btn btn--primary" href="{{ url_for('auth.login') }}">Войти</a>
+              </div>
+            </article>
+          </div>
+        {% endif %}
       </section>
 
       <section class="work-area" id="practice">

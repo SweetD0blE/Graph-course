@@ -19,7 +19,9 @@
       {% if nb_available %}
         <a class="btn btn--secondary" href="{{ url_for('course.notebook', topic_id=topic.id) }}">Скачать notebook</a>
       {% endif %}
-      {% if has_test %}
+      {% if passed %}
+        <span class="tag tag--success">Пройдено</span>
+      {% elif has_test %}
         <a class="btn btn--primary" href="{{ url_for('course.test', topic_id=topic.id) }}">Пройти тест</a>
       {% endif %}
     </div>

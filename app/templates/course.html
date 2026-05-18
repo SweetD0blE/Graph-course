@@ -9,9 +9,15 @@
   </div>
 
   {% for section in sections %}
+    {% set sp = progress[section.id] %}
     <div class="section-heading" style="margin-top:32px">
       <span class="card-label">Раздел {{ section.number }}</span>
       <h2>{{ section.title }}</h2>
+      <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }}
+         · {{ sp.percent }}%</p>
+      <div class="progress-bar" style="max-width:320px;margin-top:8px">
+        <span style="width: {{ sp.percent }}%"></span>
+      </div>
     </div>
 
     <div class="course-grid">
@@ -22,6 +28,7 @@
           <p>{{ topic.outcome or '' }}</p>
           <div class="course-card__footer">
             <span>
+              {% if topic.id in passed_ids %}<span class="tag tag--success">Пройдено</span>{% endif %}
               {% if topic.html_content %}<span class="tag tag--success">теория</span>{% endif %}
               {% if topic.questions %}<span class="tag tag--primary">тест</span>{% endif %}
               {% if topic.notebook_filename %}<span class="tag">notebook</span>{% endif %}
