@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Админ — {{ user.full_name }}{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Карточка пользователя</span>
+    <h2>{{ user.full_name or user.staff_number }}</h2>
+    <p>Реквизиты и прохождение тем.</p>
+  </div>
+
+  <article class="next-card">
+    <div class="mini-list">
+      <div><span>Табельный номер</span><strong>{{ user.staff_number }}</strong></div>
+      <div><span>Подразделение</span><strong>{{ user.department or '—' }}</strong></div>
+      <div><span>Должность</span><strong>{{ user.position or '—' }}</strong></div>
+      <div><span>Почта</span><strong>{{ user.email or '—' }}</strong></div>
+      <div><span>Роль</span><strong>{{ 'Администратор' if user.status == 1 else 'Слушатель' }}</strong></div>
+      <div>
+        <span>Зарегистрирован</span>
+        <strong>{{ user.created_at.strftime('%d.%m.%Y %H:%M') if user.created_at else '—' }}</strong>
+      </div>
+    </div>
+
+    <div class="section-heading" style="margin-top:28px">
+      <span class="card-label">Прогресс по темам</span>
+    </div>
+    <div class="mini-list">
+      {% for row in topic_rows %}
+        <div>
+          <div>
+            <strong>{{ row.topic.code }} · {{ row.topic.title }}</strong>
+            <span style="display:block">
+              лучший результат: {{ row.best }}% · попыток: {{ row.attempts }} ·
+              {{ row.last_at.strftime('%d.%m.%Y %H:%M') if row.last_at else '—' }}
+            </span>
+          </div>
+          <div style="display:flex;align-items:center">
+            {% if row.passed %}
+              <span class="tag tag--success">сдан</span>
+            {% else %}
+              <span class="tag tag--primary">не сдан</span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div><strong>Нет тем с настроенным тестом.</strong></div>
+      {% endfor %}
+    </div>
+
+    <div class="next-card__actions" style="margin-top:24px">
+      <a class="btn btn--ghost" href="{{ url_for('admin.users') }}">К списку</a>
+    </div>
+  </article>
+</section>
+{% endblock %}

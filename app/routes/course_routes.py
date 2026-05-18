@@ -72,7 +72,7 @@ def test(topic_id):
             is_ok = selected == right
             if is_ok:
                 correct += 1
-            review.append({'question': q, 'selected': selected, 'ok': is_ok})
+            review.append({'question': q, 'ok': is_ok})
 
         total = len(gradable)
         score = round(correct / total * 100)

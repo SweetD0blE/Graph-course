@@ -6,7 +6,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models import Topic, Question, AnswerOption, Users
+from app.models import Topic, Question, AnswerOption, Users, TestAttempt
 from app.app_logger import logger
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -80,3 +80,85 @@ def answers(topic_id):
         return redirect(url_for('admin.tests'))
 
     return render_template('admin_answers.html', topic=topic)
+
+
+def _test_topics():
+    """Темы, где задан хотя бы один правильный ответ (есть зачётный тест)."""
+    topics = Topic.query.order_by(Topic.order).all()
+    return [
+        t for t in topics
+        if any(any(o.is_correct for o in q.options) for q in t.questions)
+    ]
+
+
+@admin_bp.route('/users')
+@admin_required
+def users():
+    test_topics = _test_topics()
+    test_topic_ids = {t.id for t in test_topics}
+    total = len(test_topics)
+
+    by_user = {}
+    for a in TestAttempt.query.all():
+        d = by_user.setdefault(
+            a.user_id, {'passed': set(), 'count': 0, 'last': None}
+        )
+        d['count'] += 1
+        if a.passed and a.topic_id in test_topic_ids:
+            d['passed'].add(a.topic_id)
+        if d['last'] is None or (a.created_at and a.created_at > d['last']):
+            d['last'] = a.created_at
+
+    rows = []
+    for u in Users.query.order_by(Users.full_name).all():
+        d = by_user.get(u.id, {'passed': set(), 'count': 0, 'last': None})
+        passed = len(d['passed'])
+        rows.append({
+            'user': u,
+            'passed': passed,
+            'total': total,
+            'progress': round(passed / total * 100) if total else 0,
+            'attempts': d['count'],
+            'last_at': d['last'],
+        })
+    return render_template('admin_users.html', rows=rows)
+
+
+@admin_bp.route('/users/<int:user_id>')
+@admin_required
+def user_card(user_id):
+    user = Users.query.get_or_404(user_id)
+    test_topics = _test_topics()
+
+    by_topic = {}
+    attempts = (
+        TestAttempt.query
+        .filter_by(user_id=user.id)
+        .all()
+    )
+    for a in attempts:
+        d = by_topic.setdefault(
+            a.topic_id,
+            {'best': 0, 'passed': False, 'count': 0, 'last': None},
+        )
+        d['count'] += 1
+        d['best'] = max(d['best'], a.score)
+        d['passed'] = d['passed'] or a.passed
+        if d['last'] is None or (a.created_at and a.created_at > d['last']):
+            d['last'] = a.created_at
+
+    topic_rows = []
+    for t in test_topics:
+        d = by_topic.get(
+            t.id, {'best': 0, 'passed': False, 'count': 0, 'last': None}
+        )
+        topic_rows.append({
+            'topic': t,
+            'best': d['best'],
+            'passed': d['passed'],
+            'attempts': d['count'],
+            'last_at': d['last'],
+        })
+    return render_template(
+        'admin_user.html', user=user, topic_rows=topic_rows
+    )

@@ -16,16 +16,6 @@
           <strong>{{ loop.index }}. {{ item.question.text }}</strong>
           — {{ 'верно' if item.ok else 'неверно' }}
         </legend>
-        {% for o in item.question.options %}
-          <label class="quiz-option">
-            <input type="checkbox" disabled
-                   {% if o.id|string in item.selected %}checked{% endif %} />
-            <span>
-              <strong>{{ o.letter }}.</strong> {{ o.text }}
-              {% if o.is_correct %}<span class="tag tag--success">верный</span>{% endif %}
-            </span>
-          </label>
-        {% endfor %}
       </fieldset>
     {% endfor %}
 

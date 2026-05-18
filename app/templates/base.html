@@ -31,6 +31,7 @@
         <a href="{{ url_for('course.index') }}">Курс</a>
         {% if current_user.is_authenticated and current_user.status == 1 %}
           <a href="{{ url_for('admin.tests') }}">Админ-панель</a>
+          <a href="{{ url_for('admin.users') }}">Пользователи</a>
         {% endif %}
       </nav>
 
