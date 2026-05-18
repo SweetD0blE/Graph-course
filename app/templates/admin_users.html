@@ -26,6 +26,12 @@
               <span class="tag tag--primary">{{ row.passed }}/{{ row.total }} тем · {{ row.progress }}%</span>
             {% endif %}
             <span>попыток: {{ row.attempts }}</span>
+            <form method="post" action="{{ url_for('admin.set_role', user_id=row.user.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button class="btn btn--ghost" type="submit">
+                {{ 'Снять админа' if row.user.status == 1 else 'Сделать админом' }}
+              </button>
+            </form>
             <a class="btn btn--ghost" href="{{ url_for('admin.user_card', user_id=row.user.id) }}">Карточка</a>
           </div>
         </div>

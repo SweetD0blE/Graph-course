@@ -56,6 +56,12 @@
 
     <div class="next-card__actions" style="margin-top:24px">
       <a class="btn btn--ghost" href="{{ url_for('admin.users') }}">К списку</a>
+      <form method="post" action="{{ url_for('admin.set_role', user_id=user.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button class="btn btn--secondary" type="submit">
+          {{ 'Снять права администратора' if user.status == 1 else 'Назначить администратором' }}
+        </button>
+      </form>
     </div>
   </article>
 </section>

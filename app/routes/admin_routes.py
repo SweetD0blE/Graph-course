@@ -182,3 +182,25 @@ def reset_attempts(user_id, topic_id):
     )
     flash('Попытки по теме сброшены.', 'success')
     return redirect(url_for('admin.user_card', user_id=user.id))
+
+
+@admin_bp.route('/users/<int:user_id>/role', methods=['POST'])
+@admin_required
+def set_role(user_id):
+    user = Users.query.get_or_404(user_id)
+    if user.status == 1:
+        if Users.query.filter_by(status=1).count() <= 1:
+            flash('Нельзя снять последнего администратора.', 'danger')
+            return redirect(request.referrer or url_for('admin.users'))
+        user.status = 0
+        msg = 'снят с роли администратора'
+    else:
+        user.status = 1
+        msg = 'назначен администратором'
+    db.session.commit()
+    logger.info(
+        f'Пользователь {user.staff_number} {msg} '
+        f'администратором {current_user.staff_number}'
+    )
+    flash(f'{user.full_name or user.staff_number} — {msg}.', 'success')
+    return redirect(request.referrer or url_for('admin.users'))
