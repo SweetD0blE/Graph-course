@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Админ — тесты{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Администрирование</span>
+    <h2>Тесты по темам</h2>
+    <p>Отметьте правильные варианты ответов для каждой темы.</p>
+  </div>
+
+  <div class="course-grid">
+    {% for row in rows %}
+      <article class="course-card">
+        <div class="course-card__icon">{{ row.topic.code }}</div>
+        <h3>{{ row.topic.title }}</h3>
+        <p>Вопросов: {{ row.total }} · с заданными ответами:
+           {{ row.configured }}</p>
+        <div class="course-card__footer">
+          {% if row.configured == row.total %}
+            <span class="tag tag--success">настроено</span>
+          {% else %}
+            <span class="tag tag--primary">требует настройки</span>
+          {% endif %}
+          <a class="btn btn--ghost" href="{{ url_for('admin.answers', topic_id=row.topic.id) }}">Настроить</a>
+        </div>
+      </article>
+    {% else %}
+      <p>Пока нет тем с вопросами.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

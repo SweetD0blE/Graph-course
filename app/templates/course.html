@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Курс — Graph Course{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Программа</span>
+    <h2>Разделы курса</h2>
+    <p>Теория, практика и тестирование по графовой аналитике.</p>
+  </div>
+
+  {% for section in sections %}
+    <div class="section-heading" style="margin-top:32px">
+      <span class="card-label">Раздел {{ section.number }}</span>
+      <h2>{{ section.title }}</h2>
+    </div>
+
+    <div class="course-grid">
+      {% for topic in section.topics %}
+        <article class="course-card">
+          <div class="course-card__icon">{{ topic.code }}</div>
+          <h3>{{ topic.title }}</h3>
+          <p>{{ topic.outcome or '' }}</p>
+          <div class="course-card__footer">
+            <span>
+              {% if topic.html_content %}<span class="tag tag--success">теория</span>{% endif %}
+              {% if topic.questions %}<span class="tag tag--primary">тест</span>{% endif %}
+              {% if topic.notebook_filename %}<span class="tag">notebook</span>{% endif %}
+            </span>
+            <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">Открыть</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>План курса ещё загружается. Обновите страницу через минуту.</p>
+  {% endfor %}
+</section>
+{% endblock %}

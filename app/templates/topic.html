@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ topic.code }} {{ topic.title }} — Graph Course{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Тема {{ topic.code }}</span>
+    <h2>{{ topic.title }}</h2>
+  </div>
+
+  <article class="next-card">
+    {% if topic.html_content %}
+      <div class="topic-content">{{ topic.html_content | safe }}</div>
+    {% else %}
+      <p>Материал по этой теме готовится.</p>
+    {% endif %}
+
+    <div class="next-card__actions" style="margin-top:24px">
+      <a class="btn btn--ghost" href="{{ url_for('course.index') }}">К списку тем</a>
+      {% if nb_available %}
+        <a class="btn btn--secondary" href="{{ url_for('course.notebook', topic_id=topic.id) }}">Скачать notebook</a>
+      {% endif %}
+      {% if has_test %}
+        <a class="btn btn--primary" href="{{ url_for('course.test', topic_id=topic.id) }}">Пройти тест</a>
+      {% endif %}
+    </div>
+  </article>
+</section>
+{% endblock %}
