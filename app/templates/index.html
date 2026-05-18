@@ -203,39 +203,59 @@
       </section>
 
       <section class="work-area" id="practice">
-        <article class="next-card">
-          <span class="card-label">Следующая тема</span>
-          <h2>Центральность в графах</h2>
-          <p>
-            Разберите degree, closeness, betweenness и PageRank на примере сети взаимодействий.
-            После теории откройте ноутбук с практикой на NetworkX.
-          </p>
-          <div class="next-card__actions">
-            <a class="btn btn--primary" href="#">Открыть тему</a>
-            <a class="btn btn--secondary" href="#">Скачать notebook</a>
-          </div>
-        </article>
+        {% if not current_user.is_authenticated %}
+          <article class="next-card">
+            <span class="card-label">Следующая тема</span>
+            <h2>Войдите, чтобы продолжить обучение</h2>
+            <p>После входа здесь появится ваша следующая непройденная тема и прогресс по разделу.</p>
+            <div class="next-card__actions">
+              <a class="btn btn--primary" href="{{ url_for('auth.login') }}">Войти</a>
+            </div>
+          </article>
+        {% elif next_topic %}
+          {% set sp = progress[next_topic.section_id] %}
+          <article class="next-card">
+            <span class="card-label">Следующая тема</span>
+            <h2>{{ next_topic.code }} · {{ next_topic.title }}</h2>
+            <p>{{ next_topic.outcome or 'Откройте тему, чтобы продолжить обучение.' }}</p>
+            <div class="next-card__actions">
+              <a class="btn btn--primary" href="{{ url_for('course.topic', topic_id=next_topic.id) }}">Открыть тему</a>
+              {% if next_topic.notebook_filename %}
+                <a class="btn btn--secondary" href="{{ url_for('course.notebook', topic_id=next_topic.id) }}">Скачать notebook</a>
+              {% endif %}
+            </div>
+          </article>
 
-        <aside class="side-panel">
-          <span class="card-label">Ближайший checkpoint</span>
-          <h3>Итоговый тест раздела 1</h3>
-          <p>10 вопросов · проходной балл 70%</p>
+          <aside class="side-panel">
+            <span class="card-label">Прогресс раздела</span>
+            <h3>{{ next_topic.section.title }}</h3>
+            <p>Сдано {{ sp.passed }}/{{ sp.total_test }} · {{ sp.percent }}%</p>
 
-          <div class="mini-list">
-            <div>
-              <span>Теория</span>
-              <strong>готово</strong>
+            <div class="mini-list">
+              <div>
+                <span>Теория</span>
+                <strong>{{ 'готово' if next_topic.html_content else 'готовится' }}</strong>
+              </div>
+              <div>
+                <span>Тест</span>
+                <strong>{{ 'доступен' if next_topic.questions else 'нет' }}</strong>
+              </div>
+              <div>
+                <span>Notebook</span>
+                <strong>{{ 'есть' if next_topic.notebook_filename else 'нет' }}</strong>
+              </div>
             </div>
-            <div>
-              <span>Практика</span>
-              <strong>2 из 3</strong>
+          </aside>
+        {% else %}
+          <article class="next-card">
+            <span class="card-label">Следующая тема</span>
+            <h2>Курс пройден полностью</h2>
+            <p>Вы прошли все темы с тестами. Можно вернуться к материалам в любой момент.</p>
+            <div class="next-card__actions">
+              <a class="btn btn--primary" href="{{ url_for('course.index') }}">К списку тем</a>
             </div>
-            <div>
-              <span>Тест</span>
-              <strong>доступен</strong>
-            </div>
-          </div>
-        </aside>
+          </article>
+        {% endif %}
       </section>
     </main>
   </div>

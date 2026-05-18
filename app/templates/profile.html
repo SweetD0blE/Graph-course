@@ -70,11 +70,25 @@
       <div class="auth-visual-card">
         <span class="card-label">Personal progress</span>
         <h2>Ваш прогресс по курсу</h2>
-        <p>Здесь появятся пройденные темы, результаты тестов и история попыток.</p>
         <div class="auth-stats">
-          <div><strong>0%</strong><span>прогресс</span></div>
-          <div><strong>0</strong><span>тестов</span></div>
-          <div><strong>0</strong><span>практик</span></div>
+          <div><strong>{{ overall }}%</strong><span>прогресс</span></div>
+          <div><strong>{{ passed_total }}</strong><span>сдано</span></div>
+          <div><strong>{{ attempts_total }}</strong><span>попыток</span></div>
+        </div>
+
+        <div class="register-preview">
+          {% for section in sections %}
+            <div class="preview-row">
+              <span>{{ section.title }}</span>
+              <strong>{{ progress[section.id].passed }}/{{ progress[section.id].total_test }}
+                · {{ progress[section.id].percent }}%</strong>
+            </div>
+          {% else %}
+            <div class="preview-row">
+              <span>Курс</span>
+              <strong>план ещё загружается</strong>
+            </div>
+          {% endfor %}
         </div>
       </div>
     </section>

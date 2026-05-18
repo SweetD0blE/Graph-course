@@ -21,7 +21,9 @@
 
     <div class="next-card__actions" style="margin-top:24px">
       <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">К теории</a>
-      <a class="btn btn--primary" href="{{ url_for('course.test', topic_id=topic.id) }}">Пройти заново</a>
+      {% if not passed %}
+        <a class="btn btn--primary" href="{{ url_for('course.test', topic_id=topic.id) }}">Пройти заново</a>
+      {% endif %}
     </div>
   </article>
 </section>

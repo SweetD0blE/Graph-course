@@ -11,7 +11,8 @@ from flask_login import (
 
 from app.extensions import db
 from app.forms import LoginForm, RegisterForm, PasswordRecovery
-from app.models import Users, Employee
+from app.models import Users, Employee, Section, TestAttempt
+from app.progress import passed_topic_ids, section_progress
 from app.utils import send_internal_mail
 from app.app_logger import logger
 
@@ -176,7 +177,25 @@ def profile():
     user_status = (
         'Администратор' if current_user.status == 1 else 'Слушатель'
     )
-    return render_template('profile.html', user_status=user_status)
+    sections = Section.query.order_by(Section.order).all()
+    passed_ids = passed_topic_ids(current_user)
+    progress = {s.id: section_progress(s, passed_ids) for s in sections}
+    tt = sum(p['total_test'] for p in progress.values())
+    pp = sum(p['passed'] for p in progress.values())
+    overall = round(pp / tt * 100) if tt else 0
+    attempts_total = TestAttempt.query.filter_by(
+        user_id=current_user.id
+    ).count()
+    return render_template(
+        'profile.html',
+        user_status=user_status,
+        sections=sections,
+        progress=progress,
+        passed_ids=passed_ids,
+        overall=overall,
+        passed_total=pp,
+        attempts_total=attempts_total,
+    )
 
 
 @auth_bp.route('/logout')
