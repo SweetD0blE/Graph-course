@@ -46,7 +46,10 @@
           <div class="form-grid">
             <label class="form-field">
               <span>ФИО</span>
-              {{ form.full_name(placeholder="Иванов Иван Иванович", autocomplete="name") }}
+              <span class="autocomplete" id="fioAutocomplete">
+                {{ form.full_name(placeholder="Иванов Иван Иванович", autocomplete="off", id="full_name") }}
+                <ul class="autocomplete__list" id="fioSuggestions" hidden></ul>
+              </span>
               {% if form.full_name.errors %}<small class="form-error">{{ form.full_name.errors[0] }}</small>{% endif %}
             </label>
 
@@ -137,5 +140,6 @@
   </main>
 
   <script src="/assets/js/script.js"></script>
+  <script src="/assets/js/register-autocomplete.js"></script>
 </body>
 </html>

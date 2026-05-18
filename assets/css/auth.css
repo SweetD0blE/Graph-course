@@ -451,3 +451,46 @@ body.light-theme .preview-progress {
   font-size: 13px;
   font-weight: 800;
 }
+
+/* Автозаполнение ФИО на регистрации */
+.autocomplete {
+  display: block;
+  position: relative;
+}
+
+.autocomplete__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--surface-solid);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  z-index: 30;
+}
+
+.autocomplete__list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.autocomplete__list li:hover,
+.autocomplete__list li.is-active {
+  background: rgba(85, 166, 255, 0.14);
+}
+
+.autocomplete__meta {
+  color: var(--muted);
+  font-size: 12px;
+}
