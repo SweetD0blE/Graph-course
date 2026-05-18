@@ -26,12 +26,13 @@ class Settings:
 
     OUTLOOK_SENDER: str = os.getenv("OUTLOOK_SENDER", "")
 
-    COURSE_PLAN_PATH: str = os.getenv(
-        "COURSE_PLAN_PATH", str(BASE_DIR / "content" / "course_plan.xlsx")
+    COURSE_PLAN_PATH: str = (
+        os.getenv("COURSE_PLAN_PATH")
+        or str(BASE_DIR / "content" / "course_plan.xlsx")
     )
-    COURSE_DOCX_DIR: str = os.getenv(
-        "COURSE_DOCX_DIR", str(BASE_DIR / "content" / "docx")
+    COURSE_DOCX_DIR: str = (
+        os.getenv("COURSE_DOCX_DIR") or str(BASE_DIR / "content" / "docx")
     )
-    COURSE_NB_DIR: str = os.getenv(
-        "COURSE_NB_DIR", str(BASE_DIR / "content" / "notebooks")
+    COURSE_NB_DIR: str = (
+        os.getenv("COURSE_NB_DIR") or str(BASE_DIR / "content" / "notebooks")
     )

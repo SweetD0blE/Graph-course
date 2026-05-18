@@ -2,7 +2,8 @@ import random
 import string
 
 from flask import (
-    Blueprint, render_template, redirect, url_for, session, flash, request
+    Blueprint, render_template, redirect, url_for, session, flash, request,
+    jsonify
 )
 from flask_login import (
     login_user, logout_user, current_user, login_required
@@ -10,7 +11,7 @@ from flask_login import (
 
 from app.extensions import db
 from app.forms import LoginForm, RegisterForm, PasswordRecovery
-from app.models import Users
+from app.models import Users, Employee
 from app.utils import send_internal_mail
 from app.app_logger import logger
 
@@ -137,6 +138,36 @@ def register():
         return redirect(url_for('auth.login'))
 
     return render_template('register.html', form=form)
+
+
+@auth_bp.route('/register/employees')
+def register_employees():
+    """Подсказки сотрудников для автозаполнения формы регистрации.
+
+    Источник — справочник Employee (импорт из SVA_persons.xlsx).
+    Мин. длина запроса 2 и лимит 10 — против массового скрейпинга.
+    """
+    q = (request.args.get('q') or '').strip()
+    if len(q) < 2:
+        return jsonify([])
+
+    rows = (
+        Employee.query
+        .filter(Employee.full_name.ilike(f'%{q}%'))
+        .order_by(Employee.full_name)
+        .limit(10)
+        .all()
+    )
+    return jsonify([
+        {
+            'full_name': e.full_name or '',
+            'staff_number': e.staff_number or '',
+            'email': e.email or '',
+            'department': e.department or '',
+            'position': e.position or '',
+        }
+        for e in rows
+    ])
 
 
 @auth_bp.route('/profile')

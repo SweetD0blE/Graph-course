@@ -40,8 +40,10 @@ def send_internal_mail(recipient, body, subject='Код подтверждени
             pythoncom.CoUninitialize()
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f'Outlook недоступен ({e}). Письмо для {recipient} не отправлено, '
-            f'содержимое пишется в лог.'
+            f'Outlook недоступен ({e}). Это нормально вне боевого '
+            f'Windows-сервера СВА (нет pywin32): письмо не отправляется, '
+            f'код подтверждения для {recipient} пишется ниже строкой '
+            f'[MAIL→{recipient}] — используйте его для входа.'
         )
         logger.info(f'[MAIL→{recipient}] {subject}: {body}')
 
