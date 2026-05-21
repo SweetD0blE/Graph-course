@@ -8,10 +8,11 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.config import Settings
-from app.models import Section, Topic, TestAttempt
+from app.models import Section, Topic, TestAttempt, NotebookTask
 from app.progress import (
     passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
 )
+from app.utils import parse_notebook, normalize_answer
 from app.app_logger import logger
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
@@ -174,3 +175,56 @@ def notebook(topic_id):
     if not os.path.exists(os.path.join(nb_dir, name)):
         abort(404)
     return send_from_directory(nb_dir, name, as_attachment=True)
+
+
+def _notebook_path(topic):
+    name = topic.notebook_filename
+    if not name or os.path.basename(name) != name:
+        return None
+    path = os.path.join(Settings.COURSE_NB_DIR, name)
+    return path if os.path.exists(path) else None
+
+
+@course_bp.route('/topic/<int:topic_id>/practice')
+@login_required
+def practice(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    path = _notebook_path(topic)
+    if not path:
+        flash('Практика по этой теме недоступна.', 'info')
+        return redirect(url_for('course.topic', topic_id=topic.id))
+    try:
+        cells = parse_notebook(path)
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f'Не удалось разобрать ноутбук {topic.code}: {e}')
+        flash('Не удалось открыть практику.', 'warning')
+        return redirect(url_for('course.topic', topic_id=topic.id))
+    return render_template('practice.html', topic=topic, cells=cells)
+
+
+@course_bp.route(
+    '/topic/<int:topic_id>/practice/<int:order>/check', methods=['POST']
+)
+@login_required
+def practice_check(topic_id, order):
+    Topic.query.get_or_404(topic_id)
+    task = NotebookTask.query.filter_by(
+        topic_id=topic_id, order=order
+    ).first()
+    accepted = [
+        normalize_answer(x)
+        for x in (task.accepted.splitlines() if task and task.accepted
+                  else [])
+        if x.strip()
+    ]
+    if not accepted:
+        return jsonify(
+            ok=False, passed=False,
+            message='Ответ для этой ячейки ещё не настроен.',
+        )
+    given = normalize_answer(request.form.get('answer', ''))
+    passed = given in accepted
+    return jsonify(
+        ok=True, passed=passed,
+        message='Верно!' if passed else 'Неверно, попробуйте ещё раз.',
+    )

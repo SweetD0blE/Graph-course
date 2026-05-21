@@ -869,3 +869,50 @@ body.light-theme .tag--primary {
 }
 .minitest-result--ok  { color: var(--green); }
 .minitest-result--bad { color: var(--orange); }
+
+/* Ячейки ноутбука в портале (практика) */
+.nb-code {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.nb-answer {
+  margin: 14px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.nb-answer__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.nb-input {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.nb-input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}

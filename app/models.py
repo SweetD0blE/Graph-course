@@ -93,6 +93,27 @@ class Topic(db.Model):
         order_by="TopicBlock.order",
         cascade="all, delete-orphan",
     )
+    notebook_tasks = db.relationship(
+        "NotebookTask",
+        backref="topic",
+        order_by="NotebookTask.order",
+        cascade="all, delete-orphan",
+    )
+
+
+class NotebookTask(db.Model):
+    """Эталонные ответы для ячеек-ответов ноутбука темы.
+
+    accepted — допустимые ответы, по одному на строку.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(
+        db.Integer, db.ForeignKey("topic.id"), nullable=False
+    )
+    order = db.Column(db.Integer, nullable=False, default=1)
+    accepted = db.Column(db.Text)
+
 
 
 class TopicBlock(db.Model):
