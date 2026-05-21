@@ -5,11 +5,12 @@
   <div class="section-heading">
     <span class="card-label">Тема {{ topic.code }}</span>
     <h2>{{ topic.title }}</h2>
-    {% if topic_done %}
-      <p><span class="tag tag--success">Тема пройдена</span></p>
-    {% endif %}
   </div>
 
+  <div id="topic-blocks">
+  {% if topic_done %}
+    <p><span class="tag tag--success">Тема пройдена</span></p>
+  {% endif %}
   {% for stage in stages %}
     {% if stage.status == 'locked' %}
       <article class="next-card" id="block-{{ stage.order }}">
@@ -27,7 +28,7 @@
             <span class="tag tag--success">✓ Мини-тест пройден</span>
           </p>
         {% elif stage.questions %}
-          <form method="post"
+          <form method="post" class="minitest-form"
                 action="{{ url_for('course.block_test', topic_id=topic.id, block=stage.order) }}"
                 style="margin-top:16px">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -49,6 +50,7 @@
             {% endfor %}
             <div class="next-card__actions" style="margin-top:20px">
               <button class="btn btn--primary" type="submit">Проверить мини-тест</button>
+              <span class="minitest-result" data-minitest-result></span>
             </div>
           </form>
         {% endif %}
@@ -59,6 +61,7 @@
       <p>Материал по этой теме готовится.</p>
     </article>
   {% endfor %}
+  </div>
 
   <div class="next-card__actions" style="margin-top:24px">
     <a class="btn btn--ghost" href="{{ url_for('course.index') }}">К списку тем</a>
