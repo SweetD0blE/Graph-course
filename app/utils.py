@@ -201,14 +201,23 @@ def _extract_questions(paragraphs):
     return questions
 
 
-def _strip_test_blocks(html):
-    """Удаляет блоки «Тест» из HTML, сохраняя чередующуюся теорию."""
+def _split_reading_segments(html):
+    """Делит HTML на сегменты теории по блокам «Тест».
+
+    Узлы блока «Тест» (заголовок «Тест» до подтемы/следующего заголовка)
+    отбрасываются, а на их месте сегмент разрывается. Возвращает список
+    HTML-строк: segments[0] — теория до «Тест 1», segments[1] — между
+    «Тест 1» и «Тест 2» и т.д.
+    """
     from bs4 import BeautifulSoup
 
     soup = BeautifulSoup(html, "html.parser")
-    nodes = [n for n in soup.contents]
+    segments = []
+    current = []
     removing = False
-    for node in nodes:
+    just_closed_test = False
+
+    for node in list(soup.contents):
         name = getattr(node, "name", None)
         text = node.get_text(strip=True) if name else str(node).strip()
 
@@ -218,21 +227,30 @@ def _strip_test_blocks(html):
             elif name in ("h1", "h2", "h3") and text.lower() != TEST_HEADING:
                 removing = False
             else:
-                node.extract()
                 continue
 
         if name in ("h1", "h2", "h3") and text.lower() == TEST_HEADING:
             removing = True
-            node.extract()
+            just_closed_test = True
+            segments.append("".join(str(n) for n in current))
+            current = []
+            continue
 
-    return str(soup)
+        current.append(node)
+
+    segments.append("".join(str(n) for n in current))
+    if not just_closed_test and len(segments) == 1 and not segments[0].strip():
+        return [""]
+    return segments
 
 
 def parse_course_docx(path):
-    """Конвертирует docx в (reading_html, questions).
+    """Конвертирует docx в (segments, questions).
 
-    reading_html — теория с inline-изображениями без блоков «Тест».
-    questions — список вопросов с вариантами (без отметки правильных).
+    segments — список HTML-сегментов теории, разорванных по блокам
+    «Тест» (теория с inline-изображениями, без самих тестов).
+    questions — список вопросов с вариантами (без отметки правильных),
+    каждый с номером блока.
     """
     import mammoth
 
@@ -242,9 +260,9 @@ def parse_course_docx(path):
     )
     with open(path, "rb") as f:
         result = mammoth.convert_to_html(f, style_map=style_map)
-    reading_html = _strip_test_blocks(result.value)
+    segments = _split_reading_segments(result.value)
     questions = _extract_questions(_docx_paragraphs(path))
-    return reading_html, questions
+    return segments, questions
 
 
 def _split_topic_code(raw):
@@ -278,7 +296,9 @@ def load_course_plan(db):
     если у темы их ещё нет (повторный импорт не затирает отметки
     правильных ответов, проставленные администратором).
     """
-    from app.models import Section, Topic, Question, AnswerOption
+    from app.models import (
+        Section, Topic, Question, AnswerOption, TopicBlock,
+    )
 
     path = Settings.COURSE_PLAN_PATH
     try:
@@ -345,8 +365,17 @@ def load_course_plan(db):
                 doc_path = os.path.join(Settings.COURSE_DOCX_DIR, doc_name)
                 if os.path.exists(doc_path):
                     try:
-                        html, qs = parse_course_docx(doc_path)
-                        topic.html_content = html
+                        segments, qs = parse_course_docx(doc_path)
+                        topic.html_content = "".join(segments)
+                        TopicBlock.query.filter_by(
+                            topic_id=topic.id
+                        ).delete()
+                        for i, seg in enumerate(segments):
+                            db.session.add(TopicBlock(
+                                topic_id=topic.id,
+                                order=i + 1,
+                                html_content=seg,
+                            ))
                         existing = Question.query.filter_by(
                             topic_id=topic.id
                         ).count()

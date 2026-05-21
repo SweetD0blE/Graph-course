@@ -30,6 +30,7 @@
           <div>
             <strong>{{ row.topic.code }} · {{ row.topic.title }}</strong>
             <span style="display:block">
+              мини-тестов: {{ row.blocks_passed }}/{{ row.blocks_total }} ·
               лучший результат: {{ row.best }}% · попыток: {{ row.attempts }} ·
               {{ row.last_at.strftime('%d.%m.%Y %H:%M') if row.last_at else '—' }}
             </span>

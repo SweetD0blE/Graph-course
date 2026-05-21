@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models import Topic, Question, AnswerOption, Users, TestAttempt
+from app.progress import topic_passed, topic_test_blocks
 from app.app_logger import logger
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -95,7 +96,6 @@ def _test_topics():
 @admin_required
 def users():
     test_topics = _test_topics()
-    test_topic_ids = {t.id for t in test_topics}
     total = len(test_topics)
 
     by_user = {}
@@ -104,15 +104,17 @@ def users():
             a.user_id, {'passed': set(), 'count': 0, 'last': None}
         )
         d['count'] += 1
-        if a.passed and a.topic_id in test_topic_ids:
-            d['passed'].add(a.topic_id)
+        if a.passed:
+            d['passed'].add((a.topic_id, a.block))
         if d['last'] is None or (a.created_at and a.created_at > d['last']):
             d['last'] = a.created_at
 
     rows = []
     for u in Users.query.order_by(Users.full_name).all():
         d = by_user.get(u.id, {'passed': set(), 'count': 0, 'last': None})
-        passed = len(d['passed'])
+        passed = sum(
+            1 for t in test_topics if topic_passed(t, d['passed'])
+        )
         rows.append({
             'user': u,
             'passed': passed,
@@ -130,32 +132,30 @@ def user_card(user_id):
     user = Users.query.get_or_404(user_id)
     test_topics = _test_topics()
 
+    attempts = TestAttempt.query.filter_by(user_id=user.id).all()
+    passed_set = {(a.topic_id, a.block) for a in attempts if a.passed}
+
     by_topic = {}
-    attempts = (
-        TestAttempt.query
-        .filter_by(user_id=user.id)
-        .all()
-    )
     for a in attempts:
         d = by_topic.setdefault(
-            a.topic_id,
-            {'best': 0, 'passed': False, 'count': 0, 'last': None},
+            a.topic_id, {'best': 0, 'count': 0, 'last': None}
         )
         d['count'] += 1
         d['best'] = max(d['best'], a.score)
-        d['passed'] = d['passed'] or a.passed
         if d['last'] is None or (a.created_at and a.created_at > d['last']):
             d['last'] = a.created_at
 
     topic_rows = []
     for t in test_topics:
-        d = by_topic.get(
-            t.id, {'best': 0, 'passed': False, 'count': 0, 'last': None}
-        )
+        d = by_topic.get(t.id, {'best': 0, 'count': 0, 'last': None})
+        tb = topic_test_blocks(t)
+        blocks_passed = sum(1 for b in tb if (t.id, b) in passed_set)
         topic_rows.append({
             'topic': t,
             'best': d['best'],
-            'passed': d['passed'],
+            'passed': topic_passed(t, passed_set),
+            'blocks_passed': blocks_passed,
+            'blocks_total': len(tb),
             'attempts': d['count'],
             'last_at': d['last'],
         })

@@ -8,8 +8,10 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.config import Settings
-from app.models import Section, Topic, Question, AnswerOption, TestAttempt
-from app.progress import passed_topic_ids, section_progress
+from app.models import Section, Topic, TestAttempt
+from app.progress import (
+    passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
+)
 from app.app_logger import logger
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
@@ -35,107 +37,121 @@ def index():
 @login_required
 def topic(topic_id):
     topic = Topic.query.get_or_404(topic_id)
-    has_test = len(topic.questions) > 0
     nb_available = bool(
         topic.notebook_filename
         and os.path.exists(
             os.path.join(Settings.COURSE_NB_DIR, topic.notebook_filename)
         )
     )
-    attempts = TestAttempt.query.filter_by(
-        user_id=current_user.id, topic_id=topic_id
-    ).all()
-    passed = any(a.passed for a in attempts)
-    best = max((a.score for a in attempts), default=0)
+    gradable_blocks = topic_test_blocks(topic)
+    passed = {
+        b for (tid, b) in passed_blocks(current_user) if tid == topic.id
+    }
+
+    q_by_block = {}
+    for q in topic.questions:
+        q_by_block.setdefault(q.block, []).append(q)
+
+    blocks = list(topic.blocks)
+    if not blocks:
+        from types import SimpleNamespace
+        blocks = [SimpleNamespace(order=1, html_content=topic.html_content)]
+
+    stages = []
+    unlocked = True
+    for blk in blocks:
+        n = blk.order
+        has_test = n in gradable_blocks
+        block_done = n in passed
+        if not unlocked:
+            status = 'locked'
+        elif has_test and block_done:
+            status = 'done'
+        else:
+            status = 'open'
+        stages.append({
+            'order': n,
+            'html': blk.html_content or '',
+            'has_test': has_test,
+            'status': status,
+            'questions': (
+                q_by_block.get(n, [])
+                if status == 'open' and has_test else []
+            ),
+        })
+        if unlocked:
+            unlocked = (not has_test) or block_done
+
+    topic_done = bool(gradable_blocks) and gradable_blocks.issubset(passed)
     return render_template(
         'topic.html',
         topic=topic,
-        has_test=has_test,
         nb_available=nb_available,
-        passed=passed,
-        best=best,
-        attempts=len(attempts),
+        stages=stages,
+        topic_done=topic_done,
     )
 
 
-@course_bp.route('/topic/<int:topic_id>/test', methods=['GET', 'POST'])
+@course_bp.route(
+    '/topic/<int:topic_id>/block/<int:block>/test', methods=['POST']
+)
 @login_required
-def test(topic_id):
+def block_test(topic_id, block):
     topic = Topic.query.get_or_404(topic_id)
-    questions = topic.questions
-    if not questions:
-        flash('У этой темы пока нет теста.', 'info')
-        return redirect(url_for('course.topic', topic_id=topic.id))
+    anchor = url_for('course.topic', topic_id=topic.id) + f'#block-{block}'
 
-    gradable = [
-        q for q in questions
-        if any(o.is_correct for o in q.options)
+    questions = [
+        q for q in topic.questions
+        if q.block == block and any(o.is_correct for o in q.options)
     ]
-    if not gradable:
+    if not questions:
+        flash('Мини-тест недоступен.', 'warning')
+        return redirect(anchor)
+
+    passed_here = {
+        b for (tid, b) in passed_blocks(current_user) if tid == topic.id
+    }
+    prior = {b for b in topic_test_blocks(topic) if b < block}
+    if not prior.issubset(passed_here):
+        flash('Сначала пройдите предыдущие мини-тесты.', 'warning')
+        return redirect(anchor)
+
+    if block in passed_here:
+        flash('Этот мини-тест уже пройден.', 'info')
+        return redirect(anchor)
+
+    correct = 0
+    for q in questions:
+        selected = set(request.form.getlist(f'q{q.id}'))
+        right = {str(o.id) for o in q.options if o.is_correct}
+        if selected == right:
+            correct += 1
+
+    total = len(questions)
+    score = round(correct / total * 100)
+    passed = score == 100
+
+    db.session.add(TestAttempt(
+        user_id=current_user.id,
+        topic_id=topic.id,
+        block=block,
+        score=score,
+        passed=passed,
+    ))
+    db.session.commit()
+    logger.info(
+        f'Мини-тест {topic.code}/блок {block}: пользователь '
+        f'{current_user.staff_number} — {score}% — '
+        f'{"сдан" if passed else "не сдан"}'
+    )
+    if passed:
+        flash('Мини-тест пройден — следующий блок открыт.', 'success')
+    else:
         flash(
-            'Тест ещё настраивается администратором — '
-            'правильные ответы не заданы.',
+            f'Мини-тест: {score}% — не сдан, попробуйте снова.',
             'warning',
         )
-        return redirect(url_for('course.topic', topic_id=topic.id))
-
-    if topic.id in passed_topic_ids(current_user):
-        flash(
-            'Вы уже прошли этот тест на 100%. '
-            'Повторное прохождение недоступно.',
-            'info',
-        )
-        return redirect(url_for('course.topic', topic_id=topic.id))
-
-    if request.method == 'POST':
-        correct = 0
-        review = []
-        for q in gradable:
-            selected = set(request.form.getlist(f'q{q.id}'))
-            right = {
-                str(o.id) for o in q.options if o.is_correct
-            }
-            is_ok = selected == right
-            if is_ok:
-                correct += 1
-            review.append({'question': q, 'ok': is_ok})
-
-        total = len(gradable)
-        score = round(correct / total * 100)
-        passed = score == 100
-
-        if topic.id in passed_topic_ids(current_user):
-            flash(
-                'Вы уже прошли этот тест на 100%. '
-                'Повторное прохождение недоступно.',
-                'info',
-            )
-            return redirect(url_for('course.topic', topic_id=topic.id))
-
-        attempt = TestAttempt(
-            user_id=current_user.id,
-            topic_id=topic.id,
-            score=score,
-            passed=passed,
-        )
-        db.session.add(attempt)
-        db.session.commit()
-        logger.info(
-            f'Тест темы {topic.code}: пользователь '
-            f'{current_user.staff_number} — {score}% — '
-            f'{"сдан" if passed else "не сдан"}'
-        )
-        return render_template(
-            'test_result.html',
-            topic=topic,
-            score=score,
-            passed=passed,
-            correct=correct,
-            total=total,
-            review=review,
-        )
-
-    return render_template('test.html', topic=topic, questions=gradable)
+    return redirect(anchor)
 
 
 @course_bp.route('/notebook/<int:topic_id>')

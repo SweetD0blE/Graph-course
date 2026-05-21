@@ -10,7 +10,7 @@ os.environ["COURSE_PLAN_PATH"] = "/nonexistent.xlsx"
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
 from app.models import (  # noqa: E402
-    Section, Topic, Question, AnswerOption, Users,
+    Section, Topic, TopicBlock, Question, AnswerOption, Users,
 )
 
 
@@ -26,6 +26,7 @@ def seeded():
         db.session.add(section)
         db.session.flush()
 
+        # topic_a: 3 блока теории + мини-тесты для блоков 1 и 2
         topic_a = Topic(
             section_id=section.id, code="1.1",
             title="Тема с тестом", order=1,
@@ -39,16 +40,36 @@ def seeded():
         db.session.add_all([topic_a, topic_b])
         db.session.flush()
 
-        q = Question(topic_id=topic_a.id, text="Q1", order=1)
-        db.session.add(q)
+        db.session.add_all([
+            TopicBlock(topic_id=topic_a.id, order=1,
+                       html_content="<p>блок 1</p>"),
+            TopicBlock(topic_id=topic_a.id, order=2,
+                       html_content="<p>блок 2</p>"),
+            TopicBlock(topic_id=topic_a.id, order=3,
+                       html_content="<p>заключение</p>"),
+            TopicBlock(topic_id=topic_b.id, order=1,
+                       html_content="<p>теория B</p>"),
+        ])
+
+        q1 = Question(topic_id=topic_a.id, text="Q1", order=1, block=1)
+        q2 = Question(topic_id=topic_a.id, text="Q2", order=2, block=2)
+        db.session.add_all([q1, q2])
         db.session.flush()
-        right = AnswerOption(
-            question_id=q.id, letter="A", text="верно", is_correct=True
+
+        right1 = AnswerOption(
+            question_id=q1.id, letter="A", text="верно", is_correct=True
         )
-        wrong = AnswerOption(
-            question_id=q.id, letter="B", text="неверно", is_correct=False
+        right2 = AnswerOption(
+            question_id=q2.id, letter="A", text="верно", is_correct=True
         )
-        db.session.add_all([right, wrong])
+        db.session.add_all([
+            right1,
+            AnswerOption(question_id=q1.id, letter="B",
+                         text="неверно", is_correct=False),
+            right2,
+            AnswerOption(question_id=q2.id, letter="B",
+                         text="неверно", is_correct=False),
+        ])
 
         admin = Users(
             full_name="Admin", staff_number="00000001",
@@ -65,8 +86,10 @@ def seeded():
             "section": section.id,
             "topic_a": topic_a.id,
             "topic_b": topic_b.id,
-            "question": q.id,
-            "right_option": right.id,
+            "q1": q1.id,
+            "q2": q2.id,
+            "right1": right1.id,
+            "right2": right2.id,
             "admin": admin.id,
             "listener": listener.id,
         }
