@@ -9,7 +9,8 @@
       (modifier ? ' minitest-result--' + modifier : '');
   }
 
-  function refreshBlocks(blockId) {
+  function refreshBlocks() {
+    var y = window.scrollY;
     fetch(window.location.href.split('#')[0], {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
     })
@@ -20,10 +21,7 @@
         var container = document.getElementById('topic-blocks');
         if (!fresh || !container) { return; }
         container.innerHTML = fresh.innerHTML;
-        var target = blockId && document.getElementById(blockId);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        window.scrollTo(0, y);
       });
   }
 
@@ -38,9 +36,6 @@
     if (btn) { btn.disabled = true; }
     setResult(form, 'Проверяем…', '');
 
-    var blockEl = form.closest('[id^="block-"]');
-    var blockId = blockEl ? blockEl.id : null;
-
     fetch(form.action, {
       method: 'POST',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -50,7 +45,7 @@
       .then(function (data) {
         setResult(form, data.message, data.passed ? 'ok' : 'bad');
         if (data.passed) {
-          refreshBlocks(blockId);
+          refreshBlocks();
         } else if (btn) {
           btn.disabled = false;
         }
