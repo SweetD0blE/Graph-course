@@ -12,17 +12,22 @@
   <form method="post" class="next-card">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    {% for q in topic.questions %}
-      <fieldset class="quiz-question">
-        <legend><strong>{{ loop.index }}. {{ q.text }}</strong></legend>
-        {% for o in q.options %}
-          <label class="quiz-option">
-            <input type="checkbox" name="correct" value="{{ o.id }}"
-                   {% if o.is_correct %}checked{% endif %} />
-            <span><strong>{{ o.letter }}.</strong> {{ o.text }}</span>
-          </label>
-        {% endfor %}
-      </fieldset>
+    {% for block, qs in topic.questions | groupby('block') %}
+      <div class="section-heading" style="margin-top:24px">
+        <span class="card-label">Мини-тест {{ block }}</span>
+      </div>
+      {% for q in qs %}
+        <fieldset class="quiz-question">
+          <legend><strong>{{ loop.index }}. {{ q.text }}</strong></legend>
+          {% for o in q.options %}
+            <label class="quiz-option">
+              <input type="checkbox" name="correct" value="{{ o.id }}"
+                     {% if o.is_correct %}checked{% endif %} />
+              <span><strong>{{ o.letter }}.</strong> {{ o.text }}</span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
     {% endfor %}
 
     <div class="next-card__actions" style="margin-top:24px">

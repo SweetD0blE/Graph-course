@@ -63,7 +63,29 @@ def create_app() -> Flask:
 
     with app.app_context():
         db.create_all()
+        _ensure_schema()
         register_background_tasks(app)
 
     logger.info('Приложение Graph Course инициализировано')
     return app
+
+
+def _ensure_schema() -> None:
+    """Лёгкая миграция без потери данных: добавляет недостающие колонки
+    в существующую БД (db.create_all не изменяет уже созданные таблицы).
+    """
+    from sqlalchemy import text
+
+    cols = {
+        row[1]
+        for row in db.session.execute(
+            text("PRAGMA table_info(test_attempt)")
+        )
+    }
+    if cols and 'block' not in cols:
+        db.session.execute(text(
+            "ALTER TABLE test_attempt "
+            "ADD COLUMN block INTEGER NOT NULL DEFAULT 1"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: test_attempt.block добавлена')

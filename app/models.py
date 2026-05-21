@@ -87,6 +87,23 @@ class Topic(db.Model):
         order_by="Question.order",
         cascade="all, delete-orphan",
     )
+    blocks = db.relationship(
+        "TopicBlock",
+        backref="topic",
+        order_by="TopicBlock.order",
+        cascade="all, delete-orphan",
+    )
+
+
+class TopicBlock(db.Model):
+    """Сегмент теории темы. order — порядковый номер блока чтения."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    topic_id = db.Column(
+        db.Integer, db.ForeignKey("topic.id"), nullable=False
+    )
+    order = db.Column(db.Integer, nullable=False, default=1)
+    html_content = db.Column(db.Text)
 
 
 class Question(db.Model):
@@ -130,6 +147,7 @@ class TestAttempt(db.Model):
     topic_id = db.Column(
         db.Integer, db.ForeignKey("topic.id"), nullable=False
     )
+    block = db.Column(db.Integer, nullable=False, default=1)
     score = db.Column(db.Integer, nullable=False, default=0)
     passed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

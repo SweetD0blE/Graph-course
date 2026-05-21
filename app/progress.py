@@ -1,4 +1,4 @@
-from app.models import TestAttempt
+from app.models import TestAttempt, Topic
 
 
 def is_gradable(topic):
@@ -7,13 +7,40 @@ def is_gradable(topic):
     )
 
 
-def passed_topic_ids(user):
+def topic_test_blocks(topic):
+    """Номера блоков темы, у которых есть настроенный тест."""
+    return {
+        q.block for q in topic.questions
+        if any(o.is_correct for o in q.options)
+    }
+
+
+def passed_blocks(user):
+    """Множество (topic_id, block) со сданными на 100% мини-тестами."""
     if not user or not user.is_authenticated:
         return set()
     return {
-        r.topic_id for r in TestAttempt.query.filter_by(
+        (r.topic_id, r.block)
+        for r in TestAttempt.query.filter_by(
             user_id=user.id, passed=True
         ).all()
+    }
+
+
+def topic_passed(topic, passed_set):
+    """Тема пройдена ⇔ сданы все её настроенные мини-блоки."""
+    tb = topic_test_blocks(topic)
+    return bool(tb) and all(
+        (topic.id, b) in passed_set for b in tb
+    )
+
+
+def passed_topic_ids(user):
+    passed = passed_blocks(user)
+    if not passed:
+        return set()
+    return {
+        t.id for t in Topic.query.all() if topic_passed(t, passed)
     }
 
 
