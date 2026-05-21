@@ -859,3 +859,13 @@ body.light-theme .tag--primary {
   border-color: var(--primary);
   background: var(--option-checked);
 }
+
+/* Результат мини-теста рядом с кнопкой «Проверить» */
+.minitest-result {
+  align-self: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.minitest-result--ok  { color: var(--green); }
+.minitest-result--bad { color: var(--orange); }

@@ -99,6 +99,21 @@ def test_topic_passed_only_after_all_blocks(seeded, client):
         assert ids["topic_a"] in passed_topic_ids(user)
 
 
+def test_block_test_ajax_json(seeded, client):
+    _, ids = seeded
+    login(client, ids["listener"])
+    r = client.post(
+        f'/course/topic/{ids["topic_a"]}/block/1/test',
+        data={f'q{ids["q1"]}': str(ids["right1"])},
+        headers={'X-Requested-With': 'XMLHttpRequest'},
+    )
+    assert r.status_code == 200
+    data = r.get_json()
+    assert data['ok'] is True
+    assert data['passed'] is True
+    assert data['score'] == 100
+
+
 def test_old_test_route_removed(seeded, client):
     _, ids = seeded
     login(client, ids["listener"])

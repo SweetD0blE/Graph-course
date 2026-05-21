@@ -2,7 +2,7 @@ import os
 
 from flask import (
     Blueprint, render_template, abort, request, redirect, url_for, flash,
-    send_from_directory,
+    send_from_directory, jsonify,
 )
 from flask_login import login_required, current_user
 
@@ -99,26 +99,34 @@ def topic(topic_id):
 def block_test(topic_id, block):
     topic = Topic.query.get_or_404(topic_id)
     anchor = url_for('course.topic', topic_id=topic.id) + f'#block-{block}'
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def respond(message, category, *, passed=False, score=None, ok=True):
+        if is_ajax:
+            return jsonify(
+                ok=ok, passed=passed, score=score, message=message,
+            )
+        flash(message, category)
+        return redirect(anchor)
 
     questions = [
         q for q in topic.questions
         if q.block == block and any(o.is_correct for o in q.options)
     ]
     if not questions:
-        flash('Мини-тест недоступен.', 'warning')
-        return redirect(anchor)
+        return respond('Мини-тест недоступен.', 'warning', ok=False)
 
     passed_here = {
         b for (tid, b) in passed_blocks(current_user) if tid == topic.id
     }
     prior = {b for b in topic_test_blocks(topic) if b < block}
     if not prior.issubset(passed_here):
-        flash('Сначала пройдите предыдущие мини-тесты.', 'warning')
-        return redirect(anchor)
+        return respond(
+            'Сначала пройдите предыдущие мини-тесты.', 'warning', ok=False,
+        )
 
     if block in passed_here:
-        flash('Этот мини-тест уже пройден.', 'info')
-        return redirect(anchor)
+        return respond('Этот мини-тест уже пройден.', 'info', ok=False)
 
     correct = 0
     for q in questions:
@@ -145,13 +153,14 @@ def block_test(topic_id, block):
         f'{"сдан" if passed else "не сдан"}'
     )
     if passed:
-        flash('Мини-тест пройден — следующий блок открыт.', 'success')
-    else:
-        flash(
-            f'Мини-тест: {score}% — не сдан, попробуйте снова.',
-            'warning',
+        return respond(
+            'Мини-тест пройден — следующий блок открыт.', 'success',
+            passed=True, score=score,
         )
-    return redirect(anchor)
+    return respond(
+        f'Не сдан: {score}%. Попробуйте снова.', 'warning',
+        passed=False, score=score,
+    )
 
 
 @course_bp.route('/notebook/<int:topic_id>')
