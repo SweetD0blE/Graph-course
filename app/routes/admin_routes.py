@@ -1,3 +1,4 @@
+import os
 from functools import wraps
 
 from flask import (
@@ -6,8 +7,12 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models import Topic, Question, AnswerOption, Users, TestAttempt
+from app.config import Settings
+from app.models import (
+    Topic, Question, AnswerOption, Users, TestAttempt, NotebookTask,
+)
 from app.progress import topic_passed, topic_test_blocks
+from app.utils import parse_notebook
 from app.app_logger import logger
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -204,3 +209,66 @@ def set_role(user_id):
     )
     flash(f'{user.full_name or user.staff_number} — {msg}.', 'success')
     return redirect(request.referrer or url_for('admin.users'))
+
+
+def _has_notebook(topic):
+    name = topic.notebook_filename
+    if not name or os.path.basename(name) != name:
+        return False
+    return os.path.exists(os.path.join(Settings.COURSE_NB_DIR, name))
+
+
+@admin_bp.route('/notebooks')
+@admin_required
+def notebooks():
+    topics = [
+        t for t in Topic.query.order_by(Topic.order).all()
+        if _has_notebook(t)
+    ]
+    return render_template('admin_notebooks.html', topics=topics)
+
+
+@admin_bp.route('/topic/<int:topic_id>/notebook', methods=['GET', 'POST'])
+@admin_required
+def notebook_config(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    name = topic.notebook_filename
+    if not _has_notebook(topic):
+        flash('У темы нет доступного ноутбука.', 'info')
+        return redirect(url_for('admin.notebooks'))
+
+    path = os.path.join(Settings.COURSE_NB_DIR, name)
+    cells = parse_notebook(path)
+    answer_cells = [c for c in cells if c['kind'] == 'answer']
+    tasks = {t.order: t for t in topic.notebook_tasks}
+
+    if request.method == 'POST':
+        for c in answer_cells:
+            task = tasks.get(c['order'])
+            if task is None:
+                task = NotebookTask(topic_id=topic.id, order=c['order'])
+                db.session.add(task)
+            task.accepted = request.form.get(
+                f'accepted_{c["order"]}', ''
+            ).strip()
+        db.session.commit()
+        logger.info(
+            f'Эталоны практики темы {topic.code} обновлены '
+            f'администратором {current_user.staff_number}'
+        )
+        flash('Ответы практики сохранены.', 'success')
+        return redirect(url_for('admin.notebooks'))
+
+    rows = [
+        {
+            'order': c['order'],
+            'prompt': c['prompt'],
+            'source': c['source'],
+            'accepted': (tasks[c['order']].accepted
+                         if c['order'] in tasks else ''),
+        }
+        for c in answer_cells
+    ]
+    return render_template(
+        'admin_notebook.html', topic=topic, rows=rows
+    )

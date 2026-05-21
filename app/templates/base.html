@@ -32,6 +32,7 @@
         {% if current_user.is_authenticated and current_user.status == 1 %}
           <a href="{{ url_for('admin.tests') }}">Админ-панель</a>
           <a href="{{ url_for('admin.users') }}">Пользователи</a>
+          <a href="{{ url_for('admin.notebooks') }}">Практика</a>
         {% endif %}
       </nav>
 
@@ -56,5 +57,6 @@
 
   <script src="/assets/js/script.js"></script>
   <script src="/assets/js/minitest.js"></script>
+  <script src="/assets/js/practice.js"></script>
 </body>
 </html>

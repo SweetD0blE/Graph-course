@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Админ — ответы практики {{ topic.code }}{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <div class="section-heading">
+    <span class="card-label">Ответы практики · {{ topic.code }}</span>
+    <h2>{{ topic.title }}</h2>
+    <p>Для каждой ячейки-ответа укажите эталон. Несколько допустимых
+       вариантов — по одному на строку.</p>
+  </div>
+
+  <form method="post" class="next-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    {% for row in rows %}
+      <fieldset class="quiz-question">
+        <legend><strong>Ячейка-ответ {{ row.order }}</strong></legend>
+        {% if row.prompt %}
+          <div class="topic-content">{{ row.prompt | safe }}</div>
+        {% endif %}
+        <pre class="nb-code">{{ row.source }}</pre>
+        <label style="display:block;margin-top:12px">
+          <span class="card-label">Допустимые ответы (по одному на строку)</span>
+          <textarea name="accepted_{{ row.order }}" rows="3"
+                    class="nb-input" style="width:100%;margin-top:6px">{{ row.accepted }}</textarea>
+        </label>
+      </fieldset>
+    {% else %}
+      <p>В ноутбуке нет ячеек-ответов (тег nbformat «answer»).</p>
+    {% endfor %}
+
+    <div class="next-card__actions" style="margin-top:24px">
+      <a class="btn btn--ghost" href="{{ url_for('admin.notebooks') }}">Назад</a>
+      <button class="btn btn--primary" type="submit">Сохранить</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

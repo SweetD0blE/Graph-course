@@ -289,6 +289,48 @@ def _pick_materials(cell):
     return doc, nb
 
 
+def normalize_answer(s):
+    """Нормализует ответ: регистр, крайние и повторные пробелы."""
+    return " ".join(str(s or "").split()).casefold()
+
+
+def parse_notebook(path):
+    """Читает .ipynb и возвращает список ячеек по порядку.
+
+    Ячейка-ответ — code-ячейка с тегом nbformat «answer»
+    (metadata.tags). Ответ-ячейки нумеруются сквозным order.
+    """
+    import json
+
+    with open(path, encoding="utf-8") as f:
+        nb = json.load(f)
+
+    cells = []
+    answer_no = 0
+    last_md = ""
+    for cell in nb.get("cells", []):
+        ctype = cell.get("cell_type")
+        source = "".join(cell.get("source", []))
+        if ctype == "markdown":
+            cells.append({"kind": "markdown", "html": source})
+            last_md = source
+            continue
+        if ctype != "code":
+            continue
+        tags = cell.get("metadata", {}).get("tags", []) or []
+        if "answer" in tags:
+            answer_no += 1
+            cells.append({
+                "kind": "answer",
+                "order": answer_no,
+                "source": source,
+                "prompt": last_md,
+            })
+        else:
+            cells.append({"kind": "code", "source": source})
+    return cells
+
+
 def load_course_plan(db):
     """Импортирует план курса из xlsx и парсит docx-теорию.
 
@@ -297,7 +339,7 @@ def load_course_plan(db):
     правильных ответов, проставленные администратором).
     """
     from app.models import (
-        Section, Topic, Question, AnswerOption, TopicBlock,
+        Section, Topic, Question, AnswerOption, TopicBlock, NotebookTask,
     )
 
     path = Settings.COURSE_PLAN_PATH
@@ -412,6 +454,34 @@ def load_course_plan(db):
                     logger.warning(
                         f"Тема {code}: docx не найден ({doc_path})"
                     )
+
+            if nb_name:
+                nb_path = os.path.join(Settings.COURSE_NB_DIR, nb_name)
+                if os.path.exists(nb_path):
+                    try:
+                        cells = parse_notebook(nb_path)
+                        answer_cells = [
+                            c for c in cells if c["kind"] == "answer"
+                        ]
+                        existing = NotebookTask.query.filter_by(
+                            topic_id=topic.id
+                        ).count()
+                        if existing == 0:
+                            for c in answer_cells:
+                                db.session.add(NotebookTask(
+                                    topic_id=topic.id, order=c["order"]
+                                ))
+                        elif existing != len(answer_cells):
+                            logger.warning(
+                                f"Тема {code}: в БД {existing} "
+                                f"ячеек-ответов, в ноутбуке "
+                                f"{len(answer_cells)} — эталоны "
+                                f"сохранены, импорт пропущен"
+                            )
+                    except Exception as e:  # noqa: BLE001
+                        logger.warning(
+                            f"Не удалось разобрать {nb_name}: {e}"
+                        )
 
         db.session.commit()
         total_sections = Section.query.count()
