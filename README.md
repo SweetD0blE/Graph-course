@@ -6,7 +6,7 @@
 
 Теория · практика на Python · тесты · персональный прогресс — в одном лёгком Flask-приложении.
 
-`Python 3.11` · `Flask` · `SQLite (WAL)` · `Flask-Login` · `pytest`
+`Python 3.11` · `Flask` · `SQLite (WAL)` · `Flask-Login`
 
 </div>
 
@@ -29,13 +29,12 @@ Graph Course — корпоративный портал обучения для
 - Регистрация по рабочим данным с автодополнением ФИО из справочника
   сотрудников.
 - Вход по **табельному номеру + одноразовый код** из письма.
-- Курс по разделам и темам: HTML-теория, скачивание практических
-  `.ipynb`, интерактивные тесты.
-- Тест засчитывается при **100 %**; после успешной сдачи повторное
-  прохождение закрыто (тема помечается «Пройдено»).
-- Правильные ответы на странице результата **не раскрываются** —
-  только статус по каждому вопросу.
-- При незачёте видно «Лучший результат: X %».
+- Тема читается блоками: сегмент теории → мини-тест под ним → после
+  сдачи на 100 % ниже открывается следующий блок (закрытые блоки
+  скрыты заглушкой с замком).
+- Мини-тест проверяется на месте, без перезагрузки; правильные ответы
+  не раскрываются. Тема «Пройдена», когда сданы все мини-тесты.
+- Практические `.ipynb` скачиваются со страницы темы.
 - Личный кабинет: общий прогресс, разбивка по разделам, реквизиты.
 - Главная страница динамическая: следующая непройденная тема и
   счётчики курса.
@@ -54,13 +53,12 @@ Graph Course — корпоративный портал обучения для
 ### Платформа
 - Импорт сотрудников из `SVA_persons.xlsx` и плана курса из
   `content/course_plan.xlsx`; конвертация docx-теории в HTML
-  (`mammoth`), блоки «Тест» вырезаются в интерактивный тест.
+  (`mammoth`) с разбиением на блоки и мини-тесты по разметке «Тест».
 - Многопользовательский режим: Werkzeug `threaded` + SQLite
   **WAL / busy_timeout** — несколько человек проходят тесты
   одновременно без блокировок и потери данных.
 - CSRF-защита форм, серверные сессии (Flask-Login + Flask-Session).
 - Логирование ключевых действий в `app.log`.
-- Смоук-тесты на `pytest` и SessionStart-хук для веб-сессий.
 
 ---
 
@@ -72,7 +70,6 @@ Graph Course — корпоративный портал обучения для
 | Данные | SQLite (WAL), SQLAlchemy ORM |
 | Импорт контента | pandas, openpyxl, mammoth, beautifulsoup4 |
 | Frontend | Серверные шаблоны Jinja2 + статические CSS/JS (`assets/`) |
-| Тесты | pytest |
 | Почта (прод) | Outlook COM через `pywin32` *(опционально, только Windows)* |
 
 ---
@@ -144,8 +141,8 @@ content/
 | `/` | Лендинг: hero, счётчики, «Следующая тема» |
 | `/register`, `/login`, `/logout`, `/profile` | Аутентификация и личный кабинет |
 | `/course/` | Список разделов и тем |
-| `/course/topic/<id>` | Тема: теория, notebook, тест |
-| `/course/topic/<id>/test` | Прохождение теста (блокируется после 100 %) |
+| `/course/topic/<id>` | Тема: блоки теории + мини-тесты, прогрессивное открытие |
+| `/course/topic/<id>/block/<n>/test` | Проверка мини-теста блока |
 | `/admin/claim` | Бутстрап первого администратора |
 | `/admin/tests`, `/admin/topic/<id>/answers` | Настройка верных ответов |
 | `/admin/users`, `/admin/users/<id>` | Реестр и карточка пользователя |
@@ -161,40 +158,24 @@ run.py                  точка входа (threaded)
 app/__init__.py         фабрика create_app(), SQLite engine-опции
 app/config.py           настройки из .env
 app/extensions.py       db, login_manager, SQLite PRAGMA (WAL)
-app/models.py           Employee, Users, Section, Topic, Question,
-                        AnswerOption, TestAttempt + фоновый импорт
-app/progress.py         is_gradable, passed_topic_ids,
-                        section_progress, next_topic
+app/models.py           Employee, Users, Section, Topic, TopicBlock,
+                        Question, AnswerOption, TestAttempt
+app/progress.py         is_gradable, topic_test_blocks, passed_blocks,
+                        topic_passed, section_progress, next_topic
 app/forms.py            формы регистрации/входа/восстановления
 app/utils.py            отправка кода, импорт SVA и плана курса
 app/app_logger.py       логирование в app.log
 app/routes/             main · auth · course · admin
 app/templates/          base + index, login, register, profile,
-                        course, topic, test, test_result, admin_*
+                        course, topic, admin_*
 assets/                 CSS/JS/изображения (отдаются как /assets)
 content/                course_plan.xlsx, docx/, notebooks/
 scripts/gen_fake_sva.py генерация тестового SVA_persons.xlsx
-tests/                  conftest.py, test_smoke.py (pytest)
 .claude/settings.json   SessionStart-хук (установка зависимостей)
 ```
 
 Не коммитятся (`.gitignore`): `.env`, `instance/`, `app.log`,
 `flask_session/`, `SVA_persons.xlsx`, `venv/`, `__pycache__/`.
-
----
-
-## 🧪 Тесты
-
-```bash
-pip install -r requirements.txt   # включает pytest
-pytest -q
-```
-
-`tests/test_smoke.py` покрывает ключевые сценарии: расчёт прогресса,
-блокировку пересдачи и сброс попыток админом, гейтинг админки,
-назначение роли и защиту последнего админа, независимость попыток
-двух пользователей, режим WAL, главную и профиль. Изолированная БД во
-временном файле, CSRF в тестах отключён.
 
 ---
 
@@ -221,5 +202,4 @@ pytest -q
 ## 🌿 Разработка
 
 Активная ветка разработки: `claude/graph-analytics-backend-2lkYx`.
-Коммиты — осмысленные, по одному логическому изменению; перед пушем
-прогоняйте `pytest -q`.
+Коммиты — осмысленные, по одному логическому изменению.

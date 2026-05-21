@@ -10,6 +10,5 @@ pandas>=2.0.0
 openpyxl>=3.1.2
 mammoth>=1.6
 beautifulsoup4>=4.12
-pytest>=7.4
 # pywin32 — только для боевого Windows-сервера (Outlook COM).
 # В Linux/локали не ставится; код подтверждения уходит в app.log (fallback).
