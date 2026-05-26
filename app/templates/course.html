@@ -10,6 +10,7 @@
 
   {% for section in sections %}
     {% set sp = progress[section.id] %}
+    {% set state = section_states[section.id] %}
     <div class="section-heading" style="margin-top:32px">
       <span class="card-label">Раздел {{ section.number }}</span>
       <h2>{{ section.title }}</h2>
@@ -24,7 +25,16 @@
       {% endif %}
     </div>
 
-    <div class="course-grid">
+    {% if state == 'collapsed' %}
+      <button class="btn btn--primary section-cta" type="button"
+              data-open-section="{{ section.id }}">
+        Открыть раздел {{ section.number }}
+      </button>
+    {% endif %}
+
+    <div class="course-grid section-grid"
+         data-section-id="{{ section.id }}"
+         data-section-state="{{ state }}">
       {% for topic in section.topics %}
         <article class="course-card">
           <div class="course-card__icon">{{ topic.code }}</div>
