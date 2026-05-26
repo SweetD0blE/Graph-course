@@ -89,3 +89,16 @@ def _ensure_schema() -> None:
         ))
         db.session.commit()
         logger.info('Схема обновлена: test_attempt.block добавлена')
+
+    topic_cols = {
+        row[1]
+        for row in db.session.execute(
+            text("PRAGMA table_info(topic)")
+        )
+    }
+    if topic_cols and 'notebook_kind' not in topic_cols:
+        db.session.execute(text(
+            "ALTER TABLE topic ADD COLUMN notebook_kind VARCHAR(10)"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: topic.notebook_kind добавлена')

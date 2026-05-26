@@ -1,16 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Админ — ответы практики {{ topic.code }}{% endblock %}
+{% block title %}Админ — практика {{ topic.code }}{% endblock %}
 {% block content %}
 <section class="dashboard">
   <div class="section-heading">
-    <span class="card-label">Ответы практики · {{ topic.code }}</span>
+    <span class="card-label">Практика · {{ topic.code }}</span>
     <h2>{{ topic.title }}</h2>
-    <p>Для каждой ячейки-ответа укажите эталон. Несколько допустимых
-       вариантов — по одному на строку.</p>
+    <p>Выберите тип ноутбука. Для теста — задайте эталонные ответы
+       (несколько вариантов — по одному на строку).</p>
   </div>
 
   <form method="post" class="next-card">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <fieldset class="quiz-question">
+      <legend><strong>Тип ноутбука</strong></legend>
+      <label class="quiz-option">
+        <input type="radio" name="kind" value="theory"
+               {% if kind == 'theory' %}checked{% endif %} />
+        <span><strong>Теория</strong> — только чтение, в конце кнопка
+              «Прочитал».</span>
+      </label>
+      <label class="quiz-option">
+        <input type="radio" name="kind" value="test"
+               {% if kind == 'test' %}checked{% endif %} />
+        <span><strong>Тест</strong> — пользователь вводит короткие
+              ответы, тема засчитывается при всех верных.</span>
+      </label>
+    </fieldset>
 
     {% for row in rows %}
       <fieldset class="quiz-question">
@@ -26,7 +42,8 @@
         </label>
       </fieldset>
     {% else %}
-      <p>В ноутбуке нет ячеек-ответов (тег nbformat «answer»).</p>
+      <p>В ноутбуке нет ячеек-ответов (тег nbformat «answer»).
+         Тип «теория» подойдёт.</p>
     {% endfor %}
 
     <div class="next-card__actions" style="margin-top:24px">
