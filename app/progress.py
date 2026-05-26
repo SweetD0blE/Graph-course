@@ -72,6 +72,12 @@ def passed_topic_ids(user):
     }
 
 
+def section_completed(section, passed_ids):
+    """Раздел пройден: все гейтящие темы в нём в passed_ids."""
+    gradable = [t for t in section.topics if is_gradable(t)]
+    return bool(gradable) and all(t.id in passed_ids for t in gradable)
+
+
 def next_topic(sections, passed_ids):
     for s in sections:
         for t in s.topics:

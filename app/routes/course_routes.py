@@ -14,6 +14,7 @@ from app.models import (
 from app.progress import (
     passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
     notebook_completed, next_topic as compute_next_topic,
+    section_completed, is_gradable,
 )
 from app.utils import parse_notebook, normalize_answer
 from app.app_logger import logger
@@ -29,11 +30,23 @@ def index():
     progress = {
         s.id: section_progress(s, passed_ids) for s in sections
     }
+    section_states = {}
+    prev_ok = True
+    for idx, s in enumerate(sections):
+        if idx == 0:
+            section_states[s.id] = 'opened'
+        elif prev_ok:
+            section_states[s.id] = 'collapsed'
+        else:
+            section_states[s.id] = 'locked'
+        gradable = [t for t in s.topics if is_gradable(t)]
+        prev_ok = section_completed(s, passed_ids) or not gradable
     return render_template(
         'course.html',
         sections=sections,
         progress=progress,
         passed_ids=passed_ids,
+        section_states=section_states,
     )
 
 

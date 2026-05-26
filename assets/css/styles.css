@@ -916,3 +916,21 @@ body.light-theme .tag--primary {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
+
+/* Локи разделов курса */
+.section-grid[data-section-state="locked"] {
+  opacity: .45;
+  pointer-events: none;
+  filter: grayscale(35%);
+}
+
+.section-grid[data-section-state="collapsed"] {
+  display: none;
+}
+
+.section-cta {
+  display: inline-block;
+  margin: 14px 0 8px;
+  font-size: 16px;
+  padding: 14px 24px;
+}

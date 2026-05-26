@@ -10,8 +10,9 @@ from app.extensions import db
 from app.config import Settings
 from app.models import (
     Topic, Question, AnswerOption, Users, TestAttempt, NotebookTask,
+    NotebookAttempt,
 )
-from app.progress import topic_passed, topic_test_blocks
+from app.progress import topic_passed, topic_test_blocks, is_gradable
 from app.utils import parse_notebook
 from app.app_logger import logger
 
@@ -89,11 +90,10 @@ def answers(topic_id):
 
 
 def _test_topics():
-    """Темы, где задан хотя бы один правильный ответ (есть зачётный тест)."""
-    topics = Topic.query.order_by(Topic.order).all()
+    """Темы, гейтящие прогресс (мини-тесты блоков или ноутбук)."""
     return [
-        t for t in topics
-        if any(any(o.is_correct for o in q.options) for q in t.questions)
+        t for t in Topic.query.order_by(Topic.order).all()
+        if is_gradable(t)
     ]
 
 
@@ -118,7 +118,7 @@ def users():
     for u in Users.query.order_by(Users.full_name).all():
         d = by_user.get(u.id, {'passed': set(), 'count': 0, 'last': None})
         passed = sum(
-            1 for t in test_topics if topic_passed(t, d['passed'])
+            1 for t in test_topics if topic_passed(t, u, d['passed'])
         )
         rows.append({
             'user': u,
@@ -158,7 +158,7 @@ def user_card(user_id):
         topic_rows.append({
             'topic': t,
             'best': d['best'],
-            'passed': topic_passed(t, passed_set),
+            'passed': topic_passed(t, user, passed_set),
             'blocks_passed': blocks_passed,
             'blocks_total': len(tb),
             'attempts': d['count'],
@@ -179,13 +179,15 @@ def reset_attempts(user_id, topic_id):
     TestAttempt.query.filter_by(
         user_id=user.id, topic_id=topic_id
     ).delete()
+    NotebookAttempt.query.filter_by(
+        user_id=user.id, topic_id=topic_id
+    ).delete()
     db.session.commit()
     logger.info(
-        f'Попытки пользователя {user.staff_number} по теме '
-        f'{topic_id} сброшены администратором '
-        f'{current_user.staff_number}'
+        f'Прохождение темы {topic_id} пользователя {user.staff_number} '
+        f'сброшено администратором {current_user.staff_number}'
     )
-    flash('Попытки по теме сброшены.', 'success')
+    flash('Прохождение темы сброшено.', 'success')
     return redirect(url_for('admin.user_card', user_id=user.id))
 
 
