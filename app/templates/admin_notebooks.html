@@ -15,8 +15,14 @@
         <h3>{{ t.title }}</h3>
         <p>Ячеек с ответом: {{ t.notebook_tasks | length }}</p>
         <div class="course-card__footer">
-          <span></span>
-          <a class="btn btn--ghost" href="{{ url_for('admin.notebook_config', topic_id=t.id) }}">Настроить ответы</a>
+          {% if t.notebook_kind == 'test' %}
+            <span class="tag tag--primary">тест</span>
+          {% elif t.notebook_kind == 'theory' %}
+            <span class="tag tag--success">теория</span>
+          {% else %}
+            <span class="tag">не настроено</span>
+          {% endif %}
+          <a class="btn btn--ghost" href="{{ url_for('admin.notebook_config', topic_id=t.id) }}">Настроить</a>
         </div>
       </article>
     {% else %}

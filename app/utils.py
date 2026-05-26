@@ -463,6 +463,10 @@ def load_course_plan(db):
                         answer_cells = [
                             c for c in cells if c["kind"] == "answer"
                         ]
+                        if topic.notebook_kind is None:
+                            topic.notebook_kind = (
+                                'test' if answer_cells else 'theory'
+                            )
                         existing = NotebookTask.query.filter_by(
                             topic_id=topic.id
                         ).count()

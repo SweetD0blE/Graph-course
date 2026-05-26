@@ -5,9 +5,24 @@
   <div class="section-heading">
     <span class="card-label">Практика · {{ topic.code }}</span>
     <h2>{{ topic.title }}</h2>
-    <p>Изучайте ячейки и вписывайте короткий ответ — проверка появится
-       рядом с кнопкой.</p>
+    {% if kind == 'theory' %}
+      <p>Изучите материал и нажмите кнопку под ним.</p>
+    {% else %}
+      <p>Изучайте ячейки и вписывайте короткий ответ — проверка появится
+         рядом с кнопкой.</p>
+    {% endif %}
   </div>
+
+  <article class="next-card" data-topic-done-card
+           {% if not topic_done %}hidden{% endif %}>
+    <p><span class="tag tag--success">✓ Тема пройдена</span></p>
+    <div class="next-card__actions" style="margin-top:12px">
+      <a class="btn btn--primary" data-next-topic
+         href="{{ next_url or url_for('course.index') }}">
+        К следующей теме
+      </a>
+    </div>
+  </article>
 
   <article class="next-card">
     {% for cell in cells %}
@@ -15,22 +30,45 @@
         <div class="topic-content">{{ cell.html | safe }}</div>
       {% elif cell.kind == 'code' %}
         <pre class="nb-code">{{ cell.source }}</pre>
-      {% elif cell.kind == 'answer' %}
-        <form class="practice-form" method="post"
-              action="{{ url_for('course.practice_check', topic_id=topic.id, order=cell.order) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      {% elif cell.kind == 'answer' and kind == 'test' %}
+        {% if cell.order in passed_cells %}
           <div class="nb-answer">
             <span class="card-label">Ответ {{ cell.order }}</span>
-            <div class="nb-answer__row">
-              <input class="nb-input" type="text" name="answer"
-                     autocomplete="off" placeholder="Введите ответ" />
-              <button class="btn btn--primary" type="submit">Проверить</button>
-              <span class="minitest-result" data-practice-result></span>
-            </div>
+            <p style="margin-top:8px">
+              <span class="tag tag--success">✓ Ответ принят</span>
+            </p>
           </div>
-        </form>
+        {% else %}
+          <form class="practice-form" method="post"
+                action="{{ url_for('course.practice_check', topic_id=topic.id, order=cell.order) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="nb-answer">
+              <span class="card-label">Ответ {{ cell.order }}</span>
+              <div class="nb-answer__row">
+                <input class="nb-input" type="text" name="answer"
+                       autocomplete="off" placeholder="Введите ответ" />
+                <button class="btn btn--primary" type="submit">Проверить</button>
+                <span class="minitest-result" data-practice-result></span>
+              </div>
+            </div>
+          </form>
+        {% endif %}
       {% endif %}
     {% endfor %}
+
+    {% if kind == 'theory' and not topic_done %}
+      <form class="practice-read-form" method="post"
+            action="{{ url_for('course.practice_read', topic_id=topic.id) }}"
+            style="margin-top:18px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="next-card__actions">
+          <button class="btn btn--primary" type="submit">
+            Прочитал, перейти к следующей теме
+          </button>
+          <span class="minitest-result" data-practice-result></span>
+        </div>
+      </form>
+    {% endif %}
 
     <div class="next-card__actions" style="margin-top:24px">
       <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">К теме</a>

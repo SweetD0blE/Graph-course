@@ -1,14 +1,21 @@
-from app.models import TestAttempt, Topic
+from app.models import TestAttempt, Topic, NotebookAttempt
 
 
 def is_gradable(topic):
+    """Тема «гейтит» прогресс через ноутбук или мини-тесты."""
+    if topic.notebook_kind == 'theory':
+        return True
+    if topic.notebook_kind == 'test':
+        return any(
+            (t.accepted or '').strip() for t in topic.notebook_tasks
+        )
     return any(
         any(o.is_correct for o in q.options) for q in topic.questions
     )
 
 
 def topic_test_blocks(topic):
-    """Номера блоков темы, у которых есть настроенный тест."""
+    """Номера блоков темы, у которых есть настроенный мини-тест."""
     return {
         q.block for q in topic.questions
         if any(o.is_correct for o in q.options)
@@ -27,20 +34,41 @@ def passed_blocks(user):
     }
 
 
-def topic_passed(topic, passed_set):
-    """Тема пройдена ⇔ сданы все её настроенные мини-блоки."""
+def notebook_completed(topic, user):
+    """Тема засчитана через ноутбук."""
+    if not topic.notebook_kind or not user or not user.is_authenticated:
+        return False
+    if topic.notebook_kind == 'theory':
+        return NotebookAttempt.query.filter_by(
+            user_id=user.id, topic_id=topic.id,
+            cell_order=0, passed=True,
+        ).first() is not None
+    tasks = topic.notebook_tasks
+    if not tasks:
+        return False
+    done = {
+        a.cell_order for a in NotebookAttempt.query.filter_by(
+            user_id=user.id, topic_id=topic.id, passed=True,
+        ).all()
+    }
+    return all(t.order in done for t in tasks)
+
+
+def topic_passed(topic, user, passed_set):
+    """Тема пройдена: по ноутбуку, либо по мини-тестам (фолбэк)."""
+    if topic.notebook_kind:
+        return notebook_completed(topic, user)
     tb = topic_test_blocks(topic)
-    return bool(tb) and all(
-        (topic.id, b) in passed_set for b in tb
-    )
+    return bool(tb) and all((topic.id, b) in passed_set for b in tb)
 
 
 def passed_topic_ids(user):
-    passed = passed_blocks(user)
-    if not passed:
+    if not user or not user.is_authenticated:
         return set()
+    blocks = passed_blocks(user)
     return {
-        t.id for t in Topic.query.all() if topic_passed(t, passed)
+        t.id for t in Topic.query.all()
+        if topic_passed(t, user, blocks)
     }
 
 

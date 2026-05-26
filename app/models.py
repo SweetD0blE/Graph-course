@@ -78,6 +78,7 @@ class Topic(db.Model):
     outcome = db.Column(db.Text)
     doc_filename = db.Column(db.String(255))
     notebook_filename = db.Column(db.String(255))
+    notebook_kind = db.Column(db.String(10))  # 'theory' | 'test' | None
     html_content = db.Column(db.Text)
     order = db.Column(db.Integer, default=0)
 
@@ -170,6 +171,23 @@ class TestAttempt(db.Model):
     )
     block = db.Column(db.Integer, nullable=False, default=1)
     score = db.Column(db.Integer, nullable=False, default=0)
+    passed = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class NotebookAttempt(db.Model):
+    """Прохождение ноутбука. cell_order=0 — отметка «прочитано» для
+    теории; иначе совпадает с NotebookTask.order для теста.
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=False
+    )
+    topic_id = db.Column(
+        db.Integer, db.ForeignKey("topic.id"), nullable=False
+    )
+    cell_order = db.Column(db.Integer, nullable=False, default=0)
     passed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

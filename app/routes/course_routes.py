@@ -8,9 +8,12 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.config import Settings
-from app.models import Section, Topic, TestAttempt, NotebookTask
+from app.models import (
+    Section, Topic, TestAttempt, NotebookTask, NotebookAttempt,
+)
 from app.progress import (
     passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
+    notebook_completed, next_topic as compute_next_topic,
 )
 from app.utils import parse_notebook, normalize_answer
 from app.app_logger import logger
@@ -185,6 +188,14 @@ def _notebook_path(topic):
     return path if os.path.exists(path) else None
 
 
+def _next_topic_url(current_topic):
+    """URL следующей не пройденной темы; None — если курс пройден."""
+    sections = Section.query.order_by(Section.order).all()
+    passed = passed_topic_ids(current_user) | {current_topic.id}
+    nxt = compute_next_topic(sections, passed)
+    return url_for('course.topic', topic_id=nxt.id) if nxt else None
+
+
 @course_bp.route('/topic/<int:topic_id>/practice')
 @login_required
 def practice(topic_id):
@@ -199,7 +210,37 @@ def practice(topic_id):
         logger.warning(f'Не удалось разобрать ноутбук {topic.code}: {e}')
         flash('Не удалось открыть практику.', 'warning')
         return redirect(url_for('course.topic', topic_id=topic.id))
-    return render_template('practice.html', topic=topic, cells=cells)
+    passed_cells = {
+        a.cell_order for a in NotebookAttempt.query.filter_by(
+            user_id=current_user.id, topic_id=topic.id, passed=True,
+        ).all()
+    }
+    topic_done = notebook_completed(topic, current_user)
+    next_url = _next_topic_url(topic) if topic_done else None
+    return render_template(
+        'practice.html',
+        topic=topic, cells=cells,
+        kind=topic.notebook_kind or 'theory',
+        passed_cells=passed_cells,
+        topic_done=topic_done,
+        next_url=next_url,
+    )
+
+
+def _record_pass(topic_id, cell_order):
+    """Идемпотентная запись успешной попытки."""
+    exists = NotebookAttempt.query.filter_by(
+        user_id=current_user.id, topic_id=topic_id,
+        cell_order=cell_order, passed=True,
+    ).first()
+    if exists:
+        return False
+    db.session.add(NotebookAttempt(
+        user_id=current_user.id, topic_id=topic_id,
+        cell_order=cell_order, passed=True,
+    ))
+    db.session.commit()
+    return True
 
 
 @course_bp.route(
@@ -207,7 +248,7 @@ def practice(topic_id):
 )
 @login_required
 def practice_check(topic_id, order):
-    Topic.query.get_or_404(topic_id)
+    topic = Topic.query.get_or_404(topic_id)
     task = NotebookTask.query.filter_by(
         topic_id=topic_id, order=order
     ).first()
@@ -219,12 +260,43 @@ def practice_check(topic_id, order):
     ]
     if not accepted:
         return jsonify(
-            ok=False, passed=False,
+            ok=False, passed=False, cell_done=False,
+            topic_done=False, next_url=None,
             message='Ответ для этой ячейки ещё не настроен.',
         )
     given = normalize_answer(request.form.get('answer', ''))
     passed = given in accepted
+    if passed:
+        _record_pass(topic.id, order)
+    topic_done = notebook_completed(topic, current_user)
     return jsonify(
         ok=True, passed=passed,
+        cell_done=passed,
+        topic_done=topic_done,
+        next_url=_next_topic_url(topic) if topic_done else None,
         message='Верно!' if passed else 'Неверно, попробуйте ещё раз.',
+    )
+
+
+@course_bp.route(
+    '/topic/<int:topic_id>/practice/read', methods=['POST']
+)
+@login_required
+def practice_read(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    if topic.notebook_kind != 'theory':
+        return jsonify(
+            ok=False, topic_done=False, next_url=None,
+            message='Эта тема не помечена как теория.',
+        )
+    _record_pass(topic.id, 0)
+    topic_done = notebook_completed(topic, current_user)
+    logger.info(
+        f'Теория {topic.code} прочитана пользователем '
+        f'{current_user.staff_number}'
+    )
+    return jsonify(
+        ok=True, topic_done=topic_done,
+        next_url=_next_topic_url(topic) if topic_done else None,
+        message='Отмечено как прочитано.',
     )

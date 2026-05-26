@@ -243,6 +243,9 @@ def notebook_config(topic_id):
     tasks = {t.order: t for t in topic.notebook_tasks}
 
     if request.method == 'POST':
+        kind = request.form.get('kind', '').strip()
+        if kind in ('theory', 'test'):
+            topic.notebook_kind = kind
         for c in answer_cells:
             task = tasks.get(c['order'])
             if task is None:
@@ -253,10 +256,10 @@ def notebook_config(topic_id):
             ).strip()
         db.session.commit()
         logger.info(
-            f'Эталоны практики темы {topic.code} обновлены '
-            f'администратором {current_user.staff_number}'
+            f'Практика темы {topic.code} обновлена администратором '
+            f'{current_user.staff_number} (kind={topic.notebook_kind})'
         )
-        flash('Ответы практики сохранены.', 'success')
+        flash('Настройки практики сохранены.', 'success')
         return redirect(url_for('admin.notebooks'))
 
     rows = [
@@ -270,5 +273,6 @@ def notebook_config(topic_id):
         for c in answer_cells
     ]
     return render_template(
-        'admin_notebook.html', topic=topic, rows=rows
+        'admin_notebook.html', topic=topic, rows=rows,
+        kind=topic.notebook_kind or 'theory',
     )
