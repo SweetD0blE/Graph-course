@@ -326,7 +326,7 @@ def load_course_plan(db):
     import hashlib
 
     from app.models import (
-        Section, Topic, Question, AnswerOption, TopicBlock,
+        Section, Topic, Question, AnswerOption, TopicBlock, TestAttempt,
     )
 
     path = Settings.COURSE_PLAN_PATH
@@ -342,6 +342,8 @@ def load_course_plan(db):
         sections_seen = 0
         topics_seen = 0
         questions_added = 0
+        seen_numbers = set()
+        seen_codes = set()
 
         for pos, (_, row) in enumerate(df.iterrows()):
             if pd.isna(row.iloc[0]) or pd.isna(row.iloc[2]):
@@ -352,6 +354,9 @@ def load_course_plan(db):
             code, title = _split_topic_code(row.iloc[2])
             if not code:
                 continue
+
+            seen_numbers.add(number)
+            seen_codes.add(code)
 
             section = Section.query.filter_by(number=number).first()
             if section is None:
@@ -451,6 +456,32 @@ def load_course_plan(db):
                     logger.warning(
                         f"Тема {code}: docx не найден ({doc_path})"
                     )
+
+        # Удаляем разделы/темы, которых больше нет в плане (с каскадом
+        # блоков/вопросов/вариантов и попыток). Защита: чистим только
+        # если план реально прочитан — иначе не сносим весь курс.
+        if seen_codes:
+            orphan_topics = Topic.query.filter(
+                Topic.code.notin_(seen_codes)
+            ).all()
+            orphan_sections = Section.query.filter(
+                Section.number.notin_(seen_numbers)
+            ).all()
+            if orphan_topics or orphan_sections:
+                logger.info(
+                    "Импорт плана: удаляю отсутствующие в плане — "
+                    f"темы {[t.code for t in orphan_topics]}; "
+                    f"разделы {[s.number for s in orphan_sections]}"
+                )
+                orphan_topic_ids = [t.id for t in orphan_topics]
+                if orphan_topic_ids:
+                    TestAttempt.query.filter(
+                        TestAttempt.topic_id.in_(orphan_topic_ids)
+                    ).delete(synchronize_session=False)
+                for t in orphan_topics:
+                    db.session.delete(t)
+                for s in orphan_sections:
+                    db.session.delete(s)
 
         db.session.commit()
         total_sections = Section.query.count()
