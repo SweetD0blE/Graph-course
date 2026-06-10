@@ -6,9 +6,7 @@ from flask import (
 from flask_login import login_required, current_user
 
 from app.extensions import db
-from app.models import (
-    Topic, Question, AnswerOption, Users, TestAttempt,
-)
+from app.models import Topic, Question, Users, TestAttempt
 from app.progress import topic_passed, topic_test_blocks, is_gradable
 from app.app_logger import logger
 
@@ -86,7 +84,7 @@ def answers(topic_id):
 
 
 def _test_topics():
-    """Темы, гейтящие прогресс (мини-тесты блоков или ноутбук)."""
+    """Темы, гейтящие прогресс (тесты из docx или ознакомление)."""
     return [
         t for t in Topic.query.order_by(Topic.order).all()
         if is_gradable(t)
@@ -104,7 +102,8 @@ def users():
         d = by_user.setdefault(
             a.user_id, {'passed': set(), 'count': 0, 'last': None}
         )
-        d['count'] += 1
+        if a.block != 0:  # отметки «Идти дальше» — не попытки
+            d['count'] += 1
         if a.passed:
             d['passed'].add((a.topic_id, a.block))
         if d['last'] is None or (a.created_at and a.created_at > d['last']):
@@ -141,8 +140,9 @@ def user_card(user_id):
         d = by_topic.setdefault(
             a.topic_id, {'best': 0, 'count': 0, 'last': None}
         )
-        d['count'] += 1
-        d['best'] = max(d['best'], a.score)
+        if a.block != 0:  # отметки «Идти дальше» — не попытки
+            d['count'] += 1
+            d['best'] = max(d['best'], a.score)
         if d['last'] is None or (a.created_at and a.created_at > d['last']):
             d['last'] = a.created_at
 

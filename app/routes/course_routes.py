@@ -11,7 +11,7 @@ from app.config import Settings
 from app.models import Section, Topic, TestAttempt
 from app.progress import (
     passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
-    next_topic as compute_next_topic, section_completed, is_gradable,
+    next_topic as compute_next_topic, section_completed,
     course_topic_states, topic_passed, has_reading,
 )
 from app.app_logger import logger
@@ -37,7 +37,6 @@ def index():
         'course.html',
         sections=sections,
         progress=progress,
-        passed_ids=passed_ids,
         section_states=section_states,
         topic_states=topic_states,
     )
@@ -95,7 +94,10 @@ def topic(topic_id):
         if unlocked:
             unlocked = (not has_test) or block_done
 
-    reading_only = not gradable_blocks and has_reading(topic)
+    # Вопросы в docx есть, но админ ещё не разметил ответы —
+    # «Идти дальше» не показываем, чтобы тест нельзя было обойти.
+    pending = bool(topic.questions) and not gradable_blocks
+    reading_only = not topic.questions and has_reading(topic)
     topic_done = topic_passed(topic, current_user, all_passed)
     next_url = _next_topic_url(topic) if topic_done else None
     return render_template(
@@ -104,6 +106,7 @@ def topic(topic_id):
         nb_available=nb_available,
         stages=stages,
         reading_only=reading_only,
+        pending=pending,
         topic_done=topic_done,
         next_url=next_url,
     )
@@ -133,7 +136,9 @@ def block_test(topic_id, block):
         if q.block == block and any(o.is_correct for o in q.options)
     ]
     if not questions:
-        return respond('Мини-тест недоступен.', 'warning', ok=False)
+        return respond('Тест недоступен.', 'warning', ok=False)
+
+    is_final = any(q.is_final for q in questions)
 
     passed_here = {
         b for (tid, b) in passed_blocks(current_user) if tid == topic.id
@@ -141,11 +146,11 @@ def block_test(topic_id, block):
     prior = {b for b in topic_test_blocks(topic) if b < block}
     if not prior.issubset(passed_here):
         return respond(
-            'Сначала пройдите предыдущие мини-тесты.', 'warning', ok=False,
+            'Сначала пройдите предыдущие тесты.', 'warning', ok=False,
         )
 
     if block in passed_here:
-        return respond('Этот мини-тест уже пройден.', 'info', ok=False)
+        return respond('Этот тест уже пройден.', 'info', ok=False)
 
     correct = 0
     for q in questions:
@@ -167,14 +172,19 @@ def block_test(topic_id, block):
     ))
     db.session.commit()
     logger.info(
-        f'Мини-тест {topic.code}/блок {block}: пользователь '
+        f'{"Финальный тест" if is_final else "Тест"} {topic.code}'
+        f'/блок {block}: пользователь '
         f'{current_user.staff_number} — {score}% — '
         f'{"сдан" if passed else "не сдан"}'
     )
     if passed:
         done = topic_passed(topic, current_user)
+        message = (
+            'Финальный тест пройден — тема завершена.' if is_final
+            else 'Тест пройден — следующий блок открыт.'
+        )
         return respond(
-            'Мини-тест пройден — следующий блок открыт.', 'success',
+            message, 'success',
             passed=True, score=score,
             topic_done=done,
             next_url=_next_topic_url(topic) if done else None,
@@ -211,7 +221,8 @@ def _next_topic_url(current_topic):
 def topic_complete(topic_id):
     """Отметка «Идти дальше» для ознакомительной темы (без тестов)."""
     topic = Topic.query.get_or_404(topic_id)
-    if topic_test_blocks(topic) or not has_reading(topic):
+    if topic.questions or not has_reading(topic):
+        # Вопросы есть (даже ненастроенные) — тему нельзя пройти чтением.
         return jsonify(
             ok=False, topic_done=False, next_url=None,
             message='Для этой темы нужно пройти тест.',

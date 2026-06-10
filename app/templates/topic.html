@@ -7,17 +7,6 @@
     <h2>{{ topic.title }}</h2>
   </div>
 
-  <article class="next-card" data-topic-done-card
-           {% if not topic_done %}hidden{% endif %}>
-    <p><span class="tag tag--success">✓ Тема пройдена</span></p>
-    <div class="next-card__actions" style="margin-top:12px">
-      <a class="btn btn--primary" data-next-topic
-         href="{{ next_url or url_for('course.index') }}">
-        {{ 'К следующей теме' if next_url else 'К списку тем' }}
-      </a>
-    </div>
-  </article>
-
   <div id="topic-blocks">
   {% for stage in stages %}
     {% if stage.status == 'locked' %}
@@ -77,7 +66,24 @@
   {% endfor %}
   </div>
 
-  {% if reading_only and not topic_done %}
+  <article class="next-card" data-topic-done-card
+           {% if not topic_done %}hidden{% endif %} style="margin-top:18px">
+    <p><span class="tag tag--success">✓ Тема пройдена</span></p>
+    <div class="next-card__actions" style="margin-top:12px">
+      <a class="btn btn--primary" data-next-topic
+         href="{{ next_url or url_for('course.index') }}">
+        {{ 'К следующей теме' if next_url else 'К списку тем' }}
+      </a>
+    </div>
+  </article>
+
+  {% if pending %}
+    <article class="next-card" style="margin-top:18px">
+      <p class="card-label">⏳ Тест настраивается</p>
+      <p>Администратор ещё не разметил ответы теста этой темы.
+         Прохождение откроется после настройки.</p>
+    </article>
+  {% elif reading_only and not topic_done %}
     <form method="post" class="go-next-form"
           action="{{ url_for('course.topic_complete', topic_id=topic.id) }}"
           style="margin-top:18px">

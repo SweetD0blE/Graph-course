@@ -30,18 +30,23 @@
           <div>
             <strong>{{ row.topic.code }} · {{ row.topic.title }}</strong>
             <span style="display:block">
-              мини-тестов: {{ row.blocks_passed }}/{{ row.blocks_total }} ·
-              лучший результат: {{ row.best }}% · попыток: {{ row.attempts }} ·
+              {% if row.blocks_total == 0 %}
+                ознакомление ·
+              {% else %}
+                тестов: {{ row.blocks_passed }}/{{ row.blocks_total }} ·
+                лучший результат: {{ row.best }}% ·
+                попыток: {{ row.attempts }} ·
+              {% endif %}
               {{ row.last_at.strftime('%d.%m.%Y %H:%M') if row.last_at else '—' }}
             </span>
           </div>
           <div style="display:flex;align-items:center;gap:12px">
             {% if row.passed %}
-              <span class="tag tag--success">сдан</span>
+              <span class="tag tag--success">{{ 'пройдено' if row.blocks_total == 0 else 'сдан' }}</span>
             {% else %}
-              <span class="tag tag--primary">не сдан</span>
+              <span class="tag tag--primary">{{ 'не пройдено' if row.blocks_total == 0 else 'не сдан' }}</span>
             {% endif %}
-            {% if row.attempts > 0 %}
+            {% if row.attempts > 0 or row.passed %}
               <form method="post"
                     action="{{ url_for('admin.reset_attempts', user_id=user.id, topic_id=row.topic.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -51,7 +56,7 @@
           </div>
         </div>
       {% else %}
-        <div><strong>Нет тем с настроенным тестом.</strong></div>
+        <div><strong>Нет тем, влияющих на прохождение курса.</strong></div>
       {% endfor %}
     </div>
 
