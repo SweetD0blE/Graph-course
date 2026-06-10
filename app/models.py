@@ -109,7 +109,9 @@ class TopicBlock(db.Model):
 
 
 class Question(db.Model):
-    """Вопрос мини-теста. block — номер блока «Тест» внутри документа."""
+    """Вопрос теста темы. block — номер тест-блока внутри docx,
+    is_final — вопрос из блока «Финальный тест».
+    """
 
     id = db.Column(db.Integer, primary_key=True)
     topic_id = db.Column(
