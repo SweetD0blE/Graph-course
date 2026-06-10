@@ -102,3 +102,23 @@ def _ensure_schema() -> None:
         ))
         db.session.commit()
         logger.info('Схема обновлена: topic.notebook_kind добавлена')
+    if topic_cols and 'docx_hash' not in topic_cols:
+        db.session.execute(text(
+            "ALTER TABLE topic ADD COLUMN docx_hash VARCHAR(64)"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: topic.docx_hash добавлена')
+
+    q_cols = {
+        row[1]
+        for row in db.session.execute(
+            text("PRAGMA table_info(question)")
+        )
+    }
+    if q_cols and 'is_final' not in q_cols:
+        db.session.execute(text(
+            "ALTER TABLE question "
+            "ADD COLUMN is_final BOOLEAN NOT NULL DEFAULT 0"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: question.is_final добавлена')

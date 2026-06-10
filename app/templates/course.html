@@ -13,9 +13,13 @@
     {% set state = section_states[section.id] %}
     <div class="section-heading" style="margin-top:32px">
       <span class="card-label">Раздел {{ section.number }}</span>
-      <h2>{{ section.title }}</h2>
-      {% if sp.total_test == 0 %}
-        <p>Тем: {{ sp.topics }} · тест по разделу ещё не настроен</p>
+      <h2>{{ section.title }}
+        {% if state == 'locked' %}<span class="lock-badge">🔒</span>{% endif %}
+      </h2>
+      {% if state == 'locked' %}
+        <p>Откроется после прохождения предыдущего раздела.</p>
+      {% elif sp.total_test == 0 %}
+        <p>Тем: {{ sp.topics }}</p>
       {% else %}
         <p>Тем: {{ sp.topics }} · сдано {{ sp.passed }}/{{ sp.total_test }}
            · {{ sp.percent }}%</p>
@@ -25,29 +29,27 @@
       {% endif %}
     </div>
 
-    {% if state == 'collapsed' %}
-      <button class="btn btn--primary section-cta" type="button"
-              data-open-section="{{ section.id }}">
-        Открыть раздел {{ section.number }}
-      </button>
-    {% endif %}
-
-    <div class="course-grid section-grid"
-         data-section-id="{{ section.id }}"
-         data-section-state="{{ state }}">
+    <div class="course-grid section-grid" data-section-state="{{ state }}">
       {% for topic in section.topics %}
-        <article class="course-card">
+        {% set tstate = topic_states[topic.id] %}
+        {% set locked = (state == 'locked') or (tstate == 'locked') %}
+        <article class="course-card {% if locked %}topic-locked{% endif %}">
           <div class="course-card__icon">{{ topic.code }}</div>
-          <h3>{{ topic.title }}</h3>
+          <h3>{{ topic.title }}
+            {% if locked %}<span class="lock-badge">🔒</span>{% endif %}
+          </h3>
           <p>{{ topic.outcome or '' }}</p>
           <div class="course-card__footer">
             <span>
-              {% if topic.id in passed_ids %}<span class="tag tag--success">Пройдено</span>{% endif %}
-              {% if topic.html_content %}<span class="tag tag--success">теория</span>{% endif %}
+              {% if tstate == 'passed' %}<span class="tag tag--success">Пройдено</span>{% endif %}
               {% if topic.questions %}<span class="tag tag--primary">тест</span>{% endif %}
               {% if topic.notebook_filename %}<span class="tag">notebook</span>{% endif %}
             </span>
-            <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">Открыть</a>
+            {% if locked %}
+              <span class="btn btn--ghost is-disabled" aria-disabled="true">🔒 Закрыто</span>
+            {% else %}
+              <a class="btn btn--ghost" href="{{ url_for('course.topic', topic_id=topic.id) }}">Открыть</a>
+            {% endif %}
           </div>
         </article>
       {% endfor %}

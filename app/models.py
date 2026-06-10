@@ -78,7 +78,8 @@ class Topic(db.Model):
     outcome = db.Column(db.Text)
     doc_filename = db.Column(db.String(255))
     notebook_filename = db.Column(db.String(255))
-    notebook_kind = db.Column(db.String(10))  # 'theory' | 'test' | None
+    notebook_kind = db.Column(db.String(10))  # устар.; не используется
+    docx_hash = db.Column(db.String(64))
     html_content = db.Column(db.Text)
     order = db.Column(db.Integer, default=0)
 
@@ -94,27 +95,6 @@ class Topic(db.Model):
         order_by="TopicBlock.order",
         cascade="all, delete-orphan",
     )
-    notebook_tasks = db.relationship(
-        "NotebookTask",
-        backref="topic",
-        order_by="NotebookTask.order",
-        cascade="all, delete-orphan",
-    )
-
-
-class NotebookTask(db.Model):
-    """Эталонные ответы для ячеек-ответов ноутбука темы.
-
-    accepted — допустимые ответы, по одному на строку.
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-    topic_id = db.Column(
-        db.Integer, db.ForeignKey("topic.id"), nullable=False
-    )
-    order = db.Column(db.Integer, nullable=False, default=1)
-    accepted = db.Column(db.Text)
-
 
 
 class TopicBlock(db.Model):
@@ -137,6 +117,7 @@ class Question(db.Model):
     )
     order = db.Column(db.Integer, default=0)
     block = db.Column(db.Integer, default=1)
+    is_final = db.Column(db.Boolean, nullable=False, default=False)
     text = db.Column(db.Text, nullable=False)
 
     options = db.relationship(
@@ -171,23 +152,6 @@ class TestAttempt(db.Model):
     )
     block = db.Column(db.Integer, nullable=False, default=1)
     score = db.Column(db.Integer, nullable=False, default=0)
-    passed = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class NotebookAttempt(db.Model):
-    """Прохождение ноутбука. cell_order=0 — отметка «прочитано» для
-    теории; иначе совпадает с NotebookTask.order для теста.
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer, db.ForeignKey("users.id"), nullable=False
-    )
-    topic_id = db.Column(
-        db.Integer, db.ForeignKey("topic.id"), nullable=False
-    )
-    cell_order = db.Column(db.Integer, nullable=False, default=0)
     passed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
