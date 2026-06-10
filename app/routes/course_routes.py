@@ -8,15 +8,12 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.config import Settings
-from app.models import (
-    Section, Topic, TestAttempt, NotebookTask, NotebookAttempt,
-)
+from app.models import Section, Topic, TestAttempt
 from app.progress import (
     passed_topic_ids, section_progress, passed_blocks, topic_test_blocks,
-    notebook_completed, next_topic as compute_next_topic,
-    section_completed, is_gradable,
+    next_topic as compute_next_topic, section_completed, is_gradable,
+    course_topic_states, topic_passed, has_reading,
 )
-from app.utils import parse_notebook, normalize_answer
 from app.app_logger import logger
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
@@ -33,20 +30,16 @@ def index():
     section_states = {}
     prev_ok = True
     for idx, s in enumerate(sections):
-        if idx == 0:
-            section_states[s.id] = 'opened'
-        elif prev_ok:
-            section_states[s.id] = 'collapsed'
-        else:
-            section_states[s.id] = 'locked'
-        gradable = [t for t in s.topics if is_gradable(t)]
-        prev_ok = section_completed(s, passed_ids) or not gradable
+        section_states[s.id] = 'opened' if (idx == 0 or prev_ok) else 'locked'
+        prev_ok = prev_ok and section_completed(s, passed_ids)
+    topic_states = course_topic_states(sections, passed_ids)
     return render_template(
         'course.html',
         sections=sections,
         progress=progress,
         passed_ids=passed_ids,
         section_states=section_states,
+        topic_states=topic_states,
     )
 
 
@@ -61,8 +54,10 @@ def topic(topic_id):
         )
     )
     gradable_blocks = topic_test_blocks(topic)
-    passed = {
-        b for (tid, b) in passed_blocks(current_user) if tid == topic.id
+    all_passed = passed_blocks(current_user)
+    passed = {b for (tid, b) in all_passed if tid == topic.id}
+    final_blocks = {
+        q.block for q in topic.questions if q.is_final
     }
 
     q_by_block = {}
@@ -90,6 +85,7 @@ def topic(topic_id):
             'order': n,
             'html': blk.html_content or '',
             'has_test': has_test,
+            'is_final': n in final_blocks,
             'status': status,
             'questions': (
                 q_by_block.get(n, [])
@@ -99,13 +95,17 @@ def topic(topic_id):
         if unlocked:
             unlocked = (not has_test) or block_done
 
-    topic_done = bool(gradable_blocks) and gradable_blocks.issubset(passed)
+    reading_only = not gradable_blocks and has_reading(topic)
+    topic_done = topic_passed(topic, current_user, all_passed)
+    next_url = _next_topic_url(topic) if topic_done else None
     return render_template(
         'topic.html',
         topic=topic,
         nb_available=nb_available,
         stages=stages,
+        reading_only=reading_only,
         topic_done=topic_done,
+        next_url=next_url,
     )
 
 
@@ -118,10 +118,12 @@ def block_test(topic_id, block):
     anchor = url_for('course.topic', topic_id=topic.id) + f'#block-{block}'
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
-    def respond(message, category, *, passed=False, score=None, ok=True):
+    def respond(message, category, *, passed=False, score=None, ok=True,
+                topic_done=False, next_url=None):
         if is_ajax:
             return jsonify(
                 ok=ok, passed=passed, score=score, message=message,
+                topic_done=topic_done, next_url=next_url,
             )
         flash(message, category)
         return redirect(anchor)
@@ -170,9 +172,12 @@ def block_test(topic_id, block):
         f'{"сдан" if passed else "не сдан"}'
     )
     if passed:
+        done = topic_passed(topic, current_user)
         return respond(
             'Мини-тест пройден — следующий блок открыт.', 'success',
             passed=True, score=score,
+            topic_done=done,
+            next_url=_next_topic_url(topic) if done else None,
         )
     return respond(
         f'Не сдан: {score}%. Попробуйте снова.', 'warning',
@@ -193,14 +198,6 @@ def notebook(topic_id):
     return send_from_directory(nb_dir, name, as_attachment=True)
 
 
-def _notebook_path(topic):
-    name = topic.notebook_filename
-    if not name or os.path.basename(name) != name:
-        return None
-    path = os.path.join(Settings.COURSE_NB_DIR, name)
-    return path if os.path.exists(path) else None
-
-
 def _next_topic_url(current_topic):
     """URL следующей не пройденной темы; None — если курс пройден."""
     sections = Section.query.order_by(Section.order).all()
@@ -209,107 +206,31 @@ def _next_topic_url(current_topic):
     return url_for('course.topic', topic_id=nxt.id) if nxt else None
 
 
-@course_bp.route('/topic/<int:topic_id>/practice')
+@course_bp.route('/topic/<int:topic_id>/complete', methods=['POST'])
 @login_required
-def practice(topic_id):
+def topic_complete(topic_id):
+    """Отметка «Идти дальше» для ознакомительной темы (без тестов)."""
     topic = Topic.query.get_or_404(topic_id)
-    path = _notebook_path(topic)
-    if not path:
-        flash('Практика по этой теме недоступна.', 'info')
-        return redirect(url_for('course.topic', topic_id=topic.id))
-    try:
-        cells = parse_notebook(path)
-    except Exception as e:  # noqa: BLE001
-        logger.warning(f'Не удалось разобрать ноутбук {topic.code}: {e}')
-        flash('Не удалось открыть практику.', 'warning')
-        return redirect(url_for('course.topic', topic_id=topic.id))
-    passed_cells = {
-        a.cell_order for a in NotebookAttempt.query.filter_by(
-            user_id=current_user.id, topic_id=topic.id, passed=True,
-        ).all()
-    }
-    topic_done = notebook_completed(topic, current_user)
-    next_url = _next_topic_url(topic) if topic_done else None
-    return render_template(
-        'practice.html',
-        topic=topic, cells=cells,
-        kind=topic.notebook_kind or 'theory',
-        passed_cells=passed_cells,
-        topic_done=topic_done,
-        next_url=next_url,
-    )
-
-
-def _record_pass(topic_id, cell_order):
-    """Идемпотентная запись успешной попытки."""
-    exists = NotebookAttempt.query.filter_by(
-        user_id=current_user.id, topic_id=topic_id,
-        cell_order=cell_order, passed=True,
-    ).first()
-    if exists:
-        return False
-    db.session.add(NotebookAttempt(
-        user_id=current_user.id, topic_id=topic_id,
-        cell_order=cell_order, passed=True,
-    ))
-    db.session.commit()
-    return True
-
-
-@course_bp.route(
-    '/topic/<int:topic_id>/practice/<int:order>/check', methods=['POST']
-)
-@login_required
-def practice_check(topic_id, order):
-    topic = Topic.query.get_or_404(topic_id)
-    task = NotebookTask.query.filter_by(
-        topic_id=topic_id, order=order
-    ).first()
-    accepted = [
-        normalize_answer(x)
-        for x in (task.accepted.splitlines() if task and task.accepted
-                  else [])
-        if x.strip()
-    ]
-    if not accepted:
-        return jsonify(
-            ok=False, passed=False, cell_done=False,
-            topic_done=False, next_url=None,
-            message='Ответ для этой ячейки ещё не настроен.',
-        )
-    given = normalize_answer(request.form.get('answer', ''))
-    passed = given in accepted
-    if passed:
-        _record_pass(topic.id, order)
-    topic_done = notebook_completed(topic, current_user)
-    return jsonify(
-        ok=True, passed=passed,
-        cell_done=passed,
-        topic_done=topic_done,
-        next_url=_next_topic_url(topic) if topic_done else None,
-        message='Верно!' if passed else 'Неверно, попробуйте ещё раз.',
-    )
-
-
-@course_bp.route(
-    '/topic/<int:topic_id>/practice/read', methods=['POST']
-)
-@login_required
-def practice_read(topic_id):
-    topic = Topic.query.get_or_404(topic_id)
-    if topic.notebook_kind != 'theory':
+    if topic_test_blocks(topic) or not has_reading(topic):
         return jsonify(
             ok=False, topic_done=False, next_url=None,
-            message='Эта тема не помечена как теория.',
+            message='Для этой темы нужно пройти тест.',
         )
-    _record_pass(topic.id, 0)
-    topic_done = notebook_completed(topic, current_user)
-    logger.info(
-        f'Теория {topic.code} прочитана пользователем '
-        f'{current_user.staff_number}'
-    )
+    exists = TestAttempt.query.filter_by(
+        user_id=current_user.id, topic_id=topic.id, block=0, passed=True,
+    ).first()
+    if not exists:
+        db.session.add(TestAttempt(
+            user_id=current_user.id, topic_id=topic.id,
+            block=0, score=100, passed=True,
+        ))
+        db.session.commit()
+        logger.info(
+            f'Тема {topic.code} (ознакомление) отмечена пользователем '
+            f'{current_user.staff_number}'
+        )
     return jsonify(
-        ok=True, topic_done=topic_done,
-        next_url=_next_topic_url(topic) if topic_done else None,
-        message='Отмечено как прочитано.',
+        ok=True, topic_done=True,
+        next_url=_next_topic_url(topic),
+        message='Тема пройдена.',
     )

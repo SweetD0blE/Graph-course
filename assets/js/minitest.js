@@ -9,6 +9,20 @@
       (modifier ? ' minitest-result--' + modifier : '');
   }
 
+  function showCompletion(nextUrl) {
+    var card = document.querySelector('[data-topic-done-card]');
+    if (!card) { return; }
+    card.hidden = false;
+    if (nextUrl) {
+      var link = card.querySelector('[data-next-topic]');
+      if (link) {
+        link.setAttribute('href', nextUrl);
+        link.textContent = 'К следующей теме';
+      }
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   function refreshBlocks() {
     var y = window.scrollY;
     fetch(window.location.href.split('#')[0], {
@@ -27,14 +41,16 @@
 
   document.addEventListener('submit', function (e) {
     var form = e.target;
-    if (!form.classList || !form.classList.contains('minitest-form')) {
-      return;
-    }
+    if (!form.classList) { return; }
+
+    var isBlock = form.classList.contains('minitest-form');
+    var isGoNext = form.classList.contains('go-next-form');
+    if (!isBlock && !isGoNext) { return; }
     e.preventDefault();
 
     var btn = form.querySelector('button[type="submit"]');
     if (btn) { btn.disabled = true; }
-    setResult(form, 'Проверяем…', '');
+    setResult(form, isGoNext ? 'Отмечаем…' : 'Проверяем…', '');
 
     fetch(form.action, {
       method: 'POST',
@@ -43,8 +59,20 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        if (isGoNext) {
+          if (data.topic_done) {
+            form.hidden = true;
+            showCompletion(data.next_url);
+          } else {
+            setResult(form, data.message || 'Не удалось.', 'bad');
+            if (btn) { btn.disabled = false; }
+          }
+          return;
+        }
+        // block test
         setResult(form, data.message, data.passed ? 'ok' : 'bad');
         if (data.passed) {
+          if (data.topic_done) { showCompletion(data.next_url); }
           refreshBlocks();
         } else if (btn) {
           btn.disabled = false;

@@ -14,7 +14,9 @@
 
     {% for block, qs in topic.questions | groupby('block') %}
       <div class="section-heading" style="margin-top:24px">
-        <span class="card-label">Мини-тест {{ block }}</span>
+        <span class="card-label">
+          {{ 'Финальный тест' if qs[0].is_final else 'Тест ' ~ block }}
+        </span>
       </div>
       {% for q in qs %}
         <fieldset class="quiz-question">

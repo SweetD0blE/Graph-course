@@ -13,6 +13,17 @@ QUESTION_RE = re.compile(r"^\s*(\d+)\.\s+(?!\d)(.+)$", re.S)
 # Вариант ответа: «A. ...» / «B) ...» (учитываем неразрывный пробел).
 OPTION_RE = re.compile(r"^\s*([A-DА-Г])[\.\)]\s*(.+)$", re.S)
 TEST_HEADING = "тест"
+FINAL_TEST_HEADING = "финальный тест"
+
+
+def _test_heading_kind(text):
+    """Тип тест-заголовка: 'final' | 'intermediate' | None."""
+    t = " ".join((text or "").split()).lower().strip(".:")
+    if t == FINAL_TEST_HEADING:
+        return "final"
+    if t == TEST_HEADING:
+        return "intermediate"
+    return None
 
 
 def send_internal_mail(recipient, body, subject='Код подтверждения'):
@@ -137,16 +148,17 @@ def _docx_paragraphs(path):
 
 
 def _extract_questions(paragraphs):
-    """Извлекает вопросы из блоков «Тест».
+    """Извлекает вопросы из блоков «Тест» и «Финальный тест».
 
-    Блок начинается параграфом «Тест» и заканчивается подтемой (2.1.1…)
-    либо следующим «Тест», либо концом документа. Возвращает список
-    вопросов со сквозной нумерацией и номером блока.
+    Блок начинается тест-заголовком и заканчивается подтемой (2.1.1…),
+    следующим тест-заголовком или концом документа. У вопроса есть
+    номер блока и флаг is_final (для блока «Финальный тест»).
     """
     questions = []
     in_test = False
     block = 0
     order = 0
+    block_final = False
     current = None
 
     def flush():
@@ -157,10 +169,12 @@ def _extract_questions(paragraphs):
 
     for raw in paragraphs:
         text = raw.strip()
-        if text.lower() == TEST_HEADING:
+        kind = _test_heading_kind(text)
+        if kind:
             flush()
             in_test = True
             block += 1
+            block_final = (kind == "final")
             continue
         if not in_test:
             continue
@@ -178,6 +192,7 @@ def _extract_questions(paragraphs):
             current = {
                 "order": order,
                 "block": block,
+                "is_final": block_final,
                 "text": q.group(2).strip(),
                 "options": [],
             }
@@ -224,12 +239,12 @@ def _split_reading_segments(html):
         if removing:
             if name and SUBTOPIC_RE.match(text):
                 removing = False
-            elif name in ("h1", "h2", "h3") and text.lower() != TEST_HEADING:
+            elif name in ("h1", "h2", "h3") and not _test_heading_kind(text):
                 removing = False
             else:
                 continue
 
-        if name in ("h1", "h2", "h3") and text.lower() == TEST_HEADING:
+        if name in ("h1", "h2", "h3") and _test_heading_kind(text):
             removing = True
             just_closed_test = True
             segments.append("".join(str(n) for n in current))
@@ -289,57 +304,29 @@ def _pick_materials(cell):
     return doc, nb
 
 
-def normalize_answer(s):
-    """Нормализует ответ: регистр, крайние и повторные пробелы."""
-    return " ".join(str(s or "").split()).casefold()
-
-
-def parse_notebook(path):
-    """Читает .ipynb и возвращает список ячеек по порядку.
-
-    Ячейка-ответ — code-ячейка с тегом nbformat «answer»
-    (metadata.tags). Ответ-ячейки нумеруются сквозным order.
-    """
-    import json
-
-    with open(path, encoding="utf-8") as f:
-        nb = json.load(f)
-
-    cells = []
-    answer_no = 0
-    last_md = ""
-    for cell in nb.get("cells", []):
-        ctype = cell.get("cell_type")
-        source = "".join(cell.get("source", []))
-        if ctype == "markdown":
-            cells.append({"kind": "markdown", "html": source})
-            last_md = source
-            continue
-        if ctype != "code":
-            continue
-        tags = cell.get("metadata", {}).get("tags", []) or []
-        if "answer" in tags:
-            answer_no += 1
-            cells.append({
-                "kind": "answer",
-                "order": answer_no,
-                "source": source,
-                "prompt": last_md,
-            })
-        else:
-            cells.append({"kind": "code", "source": source})
-    return cells
+def _carry_marks(old_questions):
+    """Карта (block, текст вопроса, буква, текст варианта) → is_correct
+    для переноса отметок при переимпорте изменённого docx."""
+    marks = {}
+    for q in old_questions:
+        qt = " ".join((q.text or "").split()).casefold()
+        for o in q.options:
+            ot = " ".join((o.text or "").split()).casefold()
+            marks[(q.block, qt, o.letter, ot)] = o.is_correct
+    return marks
 
 
 def load_course_plan(db):
     """Импортирует план курса из xlsx и парсит docx-теорию.
 
-    Идемпотентно: разделы/темы upsert'ятся, вопросы вставляются только
-    если у темы их ещё нет (повторный импорт не затирает отметки
-    правильных ответов, проставленные администратором).
+    Темы/разделы upsert'ятся. Блоки и вопросы перепарсиваются, когда
+    docx изменился (по хешу) или их ещё нет; отметки правильных ответов
+    переносятся по совпадению текста, иначе сохраняются (хеш совпал).
     """
+    import hashlib
+
     from app.models import (
-        Section, Topic, Question, AnswerOption, TopicBlock, NotebookTask,
+        Section, Topic, Question, AnswerOption, TopicBlock,
     )
 
     path = Settings.COURSE_PLAN_PATH
@@ -407,45 +394,55 @@ def load_course_plan(db):
                 doc_path = os.path.join(Settings.COURSE_DOCX_DIR, doc_name)
                 if os.path.exists(doc_path):
                     try:
-                        segments, qs = parse_course_docx(doc_path)
-                        topic.html_content = "".join(segments)
-                        TopicBlock.query.filter_by(
-                            topic_id=topic.id
-                        ).delete()
-                        for i, seg in enumerate(segments):
-                            db.session.add(TopicBlock(
-                                topic_id=topic.id,
-                                order=i + 1,
-                                html_content=seg,
-                            ))
-                        existing = Question.query.filter_by(
-                            topic_id=topic.id
-                        ).count()
-                        if existing == 0:
+                        with open(doc_path, "rb") as fh:
+                            digest = hashlib.md5(fh.read()).hexdigest()
+                        has_questions = bool(topic.questions)
+                        if topic.docx_hash == digest and has_questions:
+                            pass  # docx не менялся — отметки целы
+                        else:
+                            segments, qs = parse_course_docx(doc_path)
+                            topic.html_content = "".join(segments)
+                            marks = _carry_marks(topic.questions)
+                            TopicBlock.query.filter_by(
+                                topic_id=topic.id
+                            ).delete()
+                            Question.query.filter_by(
+                                topic_id=topic.id
+                            ).delete()
+                            db.session.flush()
+                            for i, seg in enumerate(segments):
+                                db.session.add(TopicBlock(
+                                    topic_id=topic.id,
+                                    order=i + 1,
+                                    html_content=seg,
+                                ))
                             for q in qs:
                                 question = Question(
                                     topic_id=topic.id,
                                     order=q["order"],
                                     block=q["block"],
+                                    is_final=q.get("is_final", False),
                                     text=q["text"],
                                 )
                                 db.session.add(question)
                                 db.session.flush()
+                                qt = " ".join(q["text"].split()).casefold()
                                 for o in q["options"]:
-                                    db.session.add(
-                                        AnswerOption(
-                                            question_id=question.id,
-                                            letter=o["letter"],
-                                            text=o["text"],
-                                        )
-                                    )
+                                    ot = " ".join(
+                                        o["text"].split()
+                                    ).casefold()
+                                    db.session.add(AnswerOption(
+                                        question_id=question.id,
+                                        letter=o["letter"],
+                                        text=o["text"],
+                                        is_correct=marks.get(
+                                            (q["block"], qt,
+                                             o["letter"], ot),
+                                            False,
+                                        ),
+                                    ))
                                 questions_added += 1
-                        elif existing != len(qs):
-                            logger.warning(
-                                f"Тема {code}: в БД {existing} вопросов, "
-                                f"в docx {len(qs)} — отметки сохранены, "
-                                f"импорт пропущен"
-                            )
+                            topic.docx_hash = digest
                     except Exception as e:  # noqa: BLE001
                         logger.warning(
                             f"Не удалось разобрать {doc_name}: {e}"
@@ -454,38 +451,6 @@ def load_course_plan(db):
                     logger.warning(
                         f"Тема {code}: docx не найден ({doc_path})"
                     )
-
-            if nb_name:
-                nb_path = os.path.join(Settings.COURSE_NB_DIR, nb_name)
-                if os.path.exists(nb_path):
-                    try:
-                        cells = parse_notebook(nb_path)
-                        answer_cells = [
-                            c for c in cells if c["kind"] == "answer"
-                        ]
-                        if topic.notebook_kind is None:
-                            topic.notebook_kind = (
-                                'test' if answer_cells else 'theory'
-                            )
-                        existing = NotebookTask.query.filter_by(
-                            topic_id=topic.id
-                        ).count()
-                        if existing == 0:
-                            for c in answer_cells:
-                                db.session.add(NotebookTask(
-                                    topic_id=topic.id, order=c["order"]
-                                ))
-                        elif existing != len(answer_cells):
-                            logger.warning(
-                                f"Тема {code}: в БД {existing} "
-                                f"ячеек-ответов, в ноутбуке "
-                                f"{len(answer_cells)} — эталоны "
-                                f"сохранены, импорт пропущен"
-                            )
-                    except Exception as e:  # noqa: BLE001
-                        logger.warning(
-                            f"Не удалось разобрать {nb_name}: {e}"
-                        )
 
         db.session.commit()
         total_sections = Section.query.count()
