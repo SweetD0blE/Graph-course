@@ -65,6 +65,8 @@ def create_app() -> Flask:
         db.create_all()
         _ensure_schema()
         register_background_tasks(app)
+        from app.services.backup import schedule_daily_backups
+        schedule_daily_backups(app)
 
     logger.info('Приложение Graph Course инициализировано')
     return app

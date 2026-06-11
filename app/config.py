@@ -36,3 +36,15 @@ class Settings:
     COURSE_NB_DIR: str = (
         os.getenv("COURSE_NB_DIR") or str(BASE_DIR / "content" / "notebooks")
     )
+
+    # Бэкап БД (см. app/services/backup.py).
+    BACKUP_DIR: str = (
+        os.getenv("BACKUP_DIR") or str(BASE_DIR / "backups")
+    )
+    BACKUP_INTERVAL_HOURS: float = float(
+        os.getenv("BACKUP_INTERVAL_HOURS", "24")
+    )
+    BACKUP_KEEP: int = int(os.getenv("BACKUP_KEEP", "7"))
+    BACKUP_FIRST_DELAY_SECONDS: float = float(
+        os.getenv("BACKUP_FIRST_DELAY_SECONDS", "5")
+    )
