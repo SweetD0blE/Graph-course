@@ -339,6 +339,18 @@ def load_course_plan(db):
         df.iloc[:, 0] = df.iloc[:, 0].ffill()
         df.iloc[:, 1] = df.iloc[:, 1].ffill()
 
+        # Одноразовая чистка осиротевших AnswerOption (legacy: ранее
+        # bulk-delete вопросов оставлял варианты без родителя, отчего
+        # у вопросов накапливалось по 24–32 варианта вместо 4).
+        # Идемпотентно: при чистой БД удаляется 0 строк.
+        orphans = AnswerOption.query.filter(
+            ~AnswerOption.question_id.in_(db.session.query(Question.id))
+        ).delete(synchronize_session=False)
+        if orphans:
+            logger.info(
+                f"Импорт плана: удалено осиротевших AnswerOption: {orphans}"
+            )
+
         sections_seen = 0
         topics_seen = 0
         questions_added = 0
@@ -408,12 +420,14 @@ def load_course_plan(db):
                             segments, qs = parse_course_docx(doc_path)
                             topic.html_content = "".join(segments)
                             marks = _carry_marks(topic.questions)
-                            TopicBlock.query.filter_by(
-                                topic_id=topic.id
-                            ).delete()
-                            Question.query.filter_by(
-                                topic_id=topic.id
-                            ).delete()
+                            # ORM-удаление, чтобы каскад
+                            # AnswerOption (delete-orphan) сработал.
+                            # Bulk-delete (Query.delete) идёт мимо ORM
+                            # и оставляет осиротевшие варианты ответов.
+                            for blk in list(topic.blocks):
+                                db.session.delete(blk)
+                            for old_q in list(topic.questions):
+                                db.session.delete(old_q)
                             db.session.flush()
                             for i, seg in enumerate(segments):
                                 db.session.add(TopicBlock(
