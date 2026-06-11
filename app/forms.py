@@ -1,3 +1,5 @@
+import re
+
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Email, Regexp
@@ -6,12 +8,18 @@ from wtforms.validators import DataRequired, Email, Regexp
 STAFF_NUMBER_RE = r'^\d{8}$'
 
 
+def _strip_spaces(value):
+    """Убирает все пробельные символы (применяется до валидации)."""
+    return re.sub(r'\s+', '', value) if isinstance(value, str) else value
+
+
 class RegisterForm(FlaskForm):
     """Регистрация: ФИО, табельный номер, отдел, должность, почта."""
 
     full_name = StringField('ФИО', validators=[DataRequired()])
     staff_number = StringField(
         'Табельный номер',
+        filters=[_strip_spaces],
         validators=[
             DataRequired(),
             Regexp(STAFF_NUMBER_RE, message='Табельный номер — 8 цифр'),
@@ -31,6 +39,7 @@ class LoginForm(FlaskForm):
 
     staff_number = StringField(
         'Табельный номер',
+        filters=[_strip_spaces],
         validators=[
             DataRequired(),
             Regexp(STAFF_NUMBER_RE, message='Табельный номер — 8 цифр'),
@@ -45,6 +54,7 @@ class PasswordRecovery(FlaskForm):
 
     staff_number = StringField(
         'Табельный номер',
+        filters=[_strip_spaces],
         validators=[
             DataRequired(),
             Regexp(STAFF_NUMBER_RE, message='Табельный номер — 8 цифр'),

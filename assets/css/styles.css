@@ -560,15 +560,32 @@ body.light-theme .progress-bar {
   margin-bottom: 0;
 }
 
+.section-heading--center {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.section-heading--center .progress-bar {
+  width: 320px;
+  max-width: 100%;
+  margin: 8px auto 0;
+}
+
 .course-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
+  justify-content: center;
   gap: 18px;
 }
 
 .course-card {
   min-height: 270px;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 .course-card--featured {
@@ -601,6 +618,7 @@ body.light-theme .course-card__icon {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  margin-top: auto;
   color: var(--muted);
   font-size: 13px;
   font-weight: 800;

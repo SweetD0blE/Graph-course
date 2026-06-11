@@ -102,7 +102,9 @@ def users():
         d = by_user.setdefault(
             a.user_id, {'passed': set(), 'count': 0, 'last': None}
         )
-        if a.block != 0:  # отметки «Идти дальше» — не попытки
+        # Попытка = неудачная отправка теста; успех и отметки
+        # «Идти дальше» (block=0) не считаются.
+        if a.block != 0 and not a.passed:
             d['count'] += 1
         if a.passed:
             d['passed'].add((a.topic_id, a.block))
@@ -140,8 +142,10 @@ def user_card(user_id):
         d = by_topic.setdefault(
             a.topic_id, {'best': 0, 'count': 0, 'last': None}
         )
-        if a.block != 0:  # отметки «Идти дальше» — не попытки
-            d['count'] += 1
+        if a.block != 0:
+            # Попытка = неудачная отправка; лучший балл — по всем.
+            if not a.passed:
+                d['count'] += 1
             d['best'] = max(d['best'], a.score)
         if d['last'] is None or (a.created_at and a.created_at > d['last']):
             d['last'] = a.created_at

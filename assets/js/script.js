@@ -177,3 +177,11 @@ document.querySelectorAll(".graph-node").forEach((node) => {
     node.classList.add("is-selected");
   });
 });
+
+// Табельный номер: только цифры (ввод и вставка), максимум 8 знаков.
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (!el || el.name !== "staff_number") return;
+  const digits = el.value.replace(/\D/g, "").slice(0, 8);
+  if (el.value !== digits) el.value = digits;
+});
