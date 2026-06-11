@@ -46,7 +46,7 @@
             {% else %}
               <span class="tag tag--primary">{{ 'не пройдено' if row.blocks_total == 0 else 'не сдан' }}</span>
             {% endif %}
-            {% if row.attempts > 0 or row.passed %}
+            {% if row.last_at %}
               <form method="post"
                     action="{{ url_for('admin.reset_attempts', user_id=user.id, topic_id=row.topic.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

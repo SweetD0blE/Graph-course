@@ -11,7 +11,7 @@ from flask_login import (
 
 from app.extensions import db
 from app.forms import LoginForm, RegisterForm, PasswordRecovery
-from app.models import Users, Employee, Section, TestAttempt
+from app.models import Users, Employee, Section, Topic, TestAttempt
 from app.progress import passed_topic_ids, section_progress
 from app.utils import send_internal_mail
 from app.app_logger import logger
@@ -70,7 +70,7 @@ def login():
 
         send_internal_mail(
             user.email,
-            f'Ваш логин: {user.staff_number}\n'
+            f'Ваш табельный номер: {user.staff_number}\n'
             f'Ваш код подтверждения: {user.verification_code}',
         )
         logger.info(
@@ -80,7 +80,16 @@ def login():
         flash('Код подтверждения повторно выслан на почту.', 'info')
         return redirect(url_for('auth.login'))
 
-    return render_template('login.html', form=form, recovery=recovery_form)
+    return render_template(
+        'login.html',
+        form=form,
+        recovery=recovery_form,
+        sections_total=Section.query.count(),
+        topics_total=Topic.query.count(),
+        practices_total=Topic.query.filter(
+            Topic.notebook_filename.isnot(None)
+        ).count(),
+    )
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -128,7 +137,8 @@ def register():
 
         send_internal_mail(
             email,
-            f'Ваш логин: {staff_number}\nВаш код подтверждения: {code}',
+            f'Ваш табельный номер: {staff_number}\n'
+            f'Ваш код подтверждения: {code}',
         )
 
         flash(
@@ -185,7 +195,8 @@ def profile():
     overall = round(pp / tt * 100) if tt else 0
     attempts_total = TestAttempt.query.filter(
         TestAttempt.user_id == current_user.id,
-        TestAttempt.block != 0,  # отметки «Идти дальше» — не попытки
+        TestAttempt.block != 0,        # «Идти дальше» — не попытка
+        TestAttempt.passed.is_(False),  # попытка = неудачная отправка
     ).count()
     return render_template(
         'profile.html',

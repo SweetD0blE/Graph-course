@@ -43,13 +43,13 @@
         <form class="auth-form" method="post" action="{{ url_for('auth.login') }}">
           {{ form.hidden_tag() }}
           <label class="form-field">
-            <span>Табельный номер</span>
-            {{ form.staff_number(placeholder="10000001", autocomplete="username") }}
+            <span>Ваш табельный номер</span>
+            {{ form.staff_number(placeholder="10000001", autocomplete="username", inputmode="numeric", maxlength="8") }}
             {% if form.staff_number.errors %}<small class="form-error">{{ form.staff_number.errors[0] }}</small>{% endif %}
           </label>
 
           <label class="form-field">
-            <span>Код подтверждения</span>
+            <span>Ваш код подтверждения</span>
             {{ form.password(placeholder="6-значный код из письма", autocomplete="one-time-code") }}
             {% if form.password.errors %}<small class="form-error">{{ form.password.errors[0] }}</small>{% endif %}
           </label>
@@ -67,7 +67,7 @@
           {{ recovery.hidden_tag() }}
           <label class="form-field">
             <span>Табельный номер для восстановления</span>
-            {{ recovery.staff_number(placeholder="10000001") }}
+            {{ recovery.staff_number(placeholder="10000001", inputmode="numeric", maxlength="8") }}
             {% if recovery.staff_number.errors %}<small class="form-error">{{ recovery.staff_number.errors[0] }}</small>{% endif %}
           </label>
           {{ recovery.submit(class="btn btn--secondary auth-submit") }}
@@ -101,15 +101,15 @@
 
         <div class="auth-stats">
           <div>
-            <strong>3</strong>
-            <span>раздела</span>
+            <strong>{{ sections_total }}</strong>
+            <span>разделов</span>
           </div>
           <div>
-            <strong>24</strong>
-            <span>темы</span>
+            <strong>{{ topics_total }}</strong>
+            <span>тем</span>
           </div>
           <div>
-            <strong>7</strong>
+            <strong>{{ practices_total }}</strong>
             <span>практик</span>
           </div>
         </div>

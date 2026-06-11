@@ -20,10 +20,13 @@
         link.textContent = 'К следующей теме';
       }
     }
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  function refreshBlocks() {
+  function refreshBlocks(anchorId) {
+    // Якорь — блок, с которым работал пользователь: после перерисовки
+    // возвращаем его на прежнее место во вьюпорте, чтобы экран не прыгал.
+    var anchor = anchorId && document.getElementById(anchorId);
+    var anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
     var y = window.scrollY;
     fetch(window.location.href.split('#')[0], {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -35,7 +38,13 @@
         var container = document.getElementById('topic-blocks');
         if (!fresh || !container) { return; }
         container.innerHTML = fresh.innerHTML;
-        window.scrollTo(0, y);
+        var moved = anchorId && document.getElementById(anchorId);
+        if (moved && anchorTop !== null) {
+          var delta = moved.getBoundingClientRect().top - anchorTop;
+          if (delta) { window.scrollBy(0, delta); }
+        } else {
+          window.scrollTo(0, y);
+        }
       });
   }
 
@@ -73,7 +82,8 @@
         setResult(form, data.message, data.passed ? 'ok' : 'bad');
         if (data.passed) {
           if (data.topic_done) { showCompletion(data.next_url); }
-          refreshBlocks();
+          var blockEl = form.closest('[id^="block-"]');
+          refreshBlocks(blockEl ? blockEl.id : null);
         } else if (btn) {
           btn.disabled = false;
         }
