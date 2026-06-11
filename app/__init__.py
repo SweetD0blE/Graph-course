@@ -7,7 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 
 from .config import Settings
 from .extensions import db, login_manager
-from .app_logger import logger
+from app.services.app_logger import logger
 from app.models import Users, register_background_tasks
 
 csrf = CSRFProtect()
@@ -17,7 +17,7 @@ sess = Session()
 def create_app() -> Flask:
     app = Flask(
         __name__,
-        static_folder='../assets',
+        static_folder='static',
         static_url_path='/assets',
     )
 

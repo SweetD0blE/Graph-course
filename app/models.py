@@ -161,17 +161,17 @@ class TestAttempt(db.Model):
 def run_import_in_thread(app) -> None:
     """Фоновый импорт сотрудников и плана курса при старте приложения."""
     with app.app_context():
-        from app.app_logger import logger
+        from app.services.app_logger import logger
 
         try:
-            from app.utils import load_sva_persons
+            from app.services.sva_importer import load_sva_persons
 
             load_sva_persons(db)
         except Exception:
             logger.exception("Фоновый импорт сотрудников провален")
 
         try:
-            from app.utils import load_course_plan
+            from app.services.plan_importer import load_course_plan
 
             load_course_plan(db)
         except Exception:

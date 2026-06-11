@@ -13,8 +13,8 @@ from app.extensions import db
 from app.forms import LoginForm, RegisterForm, PasswordRecovery
 from app.models import Users, Employee, Section, Topic, TestAttempt
 from app.progress import passed_topic_ids, section_progress
-from app.utils import send_internal_mail
-from app.app_logger import logger
+from app.services.mailer import send_internal_mail
+from app.services.app_logger import logger
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -81,7 +81,7 @@ def login():
         return redirect(url_for('auth.login'))
 
     return render_template(
-        'login.html',
+        'auth/login.html',
         form=form,
         recovery=recovery_form,
         sections_total=Section.query.count(),
@@ -148,7 +148,7 @@ def register():
         )
         return redirect(url_for('auth.login'))
 
-    return render_template('register.html', form=form)
+    return render_template('auth/register.html', form=form)
 
 
 @auth_bp.route('/register/employees')
@@ -199,7 +199,7 @@ def profile():
         TestAttempt.passed.is_(False),  # попытка = неудачная отправка
     ).count()
     return render_template(
-        'profile.html',
+        'auth/profile.html',
         user_status=user_status,
         sections=sections,
         progress=progress,

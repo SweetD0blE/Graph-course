@@ -14,7 +14,7 @@ from app.progress import (
     next_topic as compute_next_topic, section_completed,
     course_topic_states, topic_passed, has_reading,
 )
-from app.app_logger import logger
+from app.services.app_logger import logger
 
 course_bp = Blueprint('course', __name__, url_prefix='/course')
 
@@ -34,7 +34,7 @@ def index():
         prev_ok = prev_ok and section_completed(s, passed_ids)
     topic_states = course_topic_states(sections, passed_ids)
     return render_template(
-        'course.html',
+        'course/list.html',
         sections=sections,
         progress=progress,
         section_states=section_states,
@@ -101,7 +101,7 @@ def topic(topic_id):
     topic_done = topic_passed(topic, current_user, all_passed)
     next_url = _next_topic_url(topic) if topic_done else None
     return render_template(
-        'topic.html',
+        'course/topic.html',
         topic=topic,
         nb_available=nb_available,
         stages=stages,

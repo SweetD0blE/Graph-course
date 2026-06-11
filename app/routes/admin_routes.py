@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.models import Topic, Question, Users, TestAttempt
 from app.progress import topic_passed, topic_test_blocks, is_gradable
-from app.app_logger import logger
+from app.services.app_logger import logger
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -56,7 +56,7 @@ def tests():
             1 for q in t.questions if any(o.is_correct for o in q.options)
         )
         rows.append({'topic': t, 'total': total, 'configured': configured})
-    return render_template('admin_tests.html', rows=rows)
+    return render_template('admin/tests.html', rows=rows)
 
 
 @admin_bp.route('/topic/<int:topic_id>/answers', methods=['GET', 'POST'])
@@ -80,7 +80,7 @@ def answers(topic_id):
         flash('Правильные ответы сохранены.', 'success')
         return redirect(url_for('admin.tests'))
 
-    return render_template('admin_answers.html', topic=topic)
+    return render_template('admin/answers.html', topic=topic)
 
 
 def _test_topics():
@@ -125,7 +125,7 @@ def users():
             'attempts': d['count'],
             'last_at': d['last'],
         })
-    return render_template('admin_users.html', rows=rows)
+    return render_template('admin/users.html', rows=rows)
 
 
 @admin_bp.route('/users/<int:user_id>')
@@ -165,7 +165,7 @@ def user_card(user_id):
             'last_at': d['last'],
         })
     return render_template(
-        'admin_user.html', user=user, topic_rows=topic_rows
+        'admin/user.html', user=user, topic_rows=topic_rows
     )
 
 
