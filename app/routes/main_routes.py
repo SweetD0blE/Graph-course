@@ -21,7 +21,7 @@ def index():
     overall = round(pp / tt * 100) if tt else 0
     nxt = next_topic(sections, passed_ids)
     return render_template(
-        'index.html',
+        'main/index.html',
         sections=sections,
         progress=progress,
         passed_ids=passed_ids,
