@@ -110,6 +110,12 @@ def _ensure_schema() -> None:
         ))
         db.session.commit()
         logger.info('Схема обновлена: topic.docx_hash добавлена')
+    if topic_cols and 'video_filename' not in topic_cols:
+        db.session.execute(text(
+            "ALTER TABLE topic ADD COLUMN video_filename VARCHAR(255)"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: topic.video_filename добавлена')
 
     q_cols = {
         row[1]

@@ -1,6 +1,8 @@
 .env
 instance/
 backups/
+content/videos/*
+!content/videos/.gitkeep
 __pycache__/
 *.pyc
 app.log
