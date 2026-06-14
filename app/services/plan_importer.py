@@ -28,10 +28,10 @@ def _split_topic_code(raw):
 
 
 def _pick_materials(cell):
-    """Из «Материалов на выход» достаёт имена .docx и .ipynb."""
-    doc = nb = None
+    """Из «Материалов на выход» достаёт имена .docx, .ipynb и .mp4."""
+    doc = nb = video = None
     if cell is None or (isinstance(cell, float) and pd.isna(cell)):
-        return doc, nb
+        return doc, nb, video
     for part in re.split(r"[\n,;]+", str(cell)):
         part = part.strip()
         low = part.lower()
@@ -39,7 +39,9 @@ def _pick_materials(cell):
             doc = part
         elif low.endswith(".ipynb") and nb is None:
             nb = part
-    return doc, nb
+        elif low.endswith(".mp4") and video is None:
+            video = part
+    return doc, nb, video
 
 
 def load_course_plan(db):
@@ -106,7 +108,7 @@ def load_course_plan(db):
             outcome = (
                 str(row.iloc[6]).strip() if not pd.isna(row.iloc[6]) else None
             )
-            doc_name, nb_name = _pick_materials(row.iloc[7])
+            doc_name, nb_name, video_name = _pick_materials(row.iloc[7])
 
             topic = Topic.query.filter_by(code=code).first()
             if topic is None:
@@ -120,6 +122,7 @@ def load_course_plan(db):
             topic.outcome = outcome
             topic.doc_filename = doc_name
             topic.notebook_filename = nb_name
+            topic.video_filename = video_name
             topic.order = pos
             db.session.flush()
 

@@ -52,6 +52,12 @@ def topic(topic_id):
             os.path.join(Settings.COURSE_NB_DIR, topic.notebook_filename)
         )
     )
+    video_available = bool(
+        topic.video_filename
+        and os.path.exists(
+            os.path.join(Settings.COURSE_VIDEO_DIR, topic.video_filename)
+        )
+    )
     gradable_blocks = topic_test_blocks(topic)
     all_passed = passed_blocks(current_user)
     passed = {b for (tid, b) in all_passed if tid == topic.id}
@@ -104,6 +110,7 @@ def topic(topic_id):
         'course/topic.html',
         topic=topic,
         nb_available=nb_available,
+        video_available=video_available,
         stages=stages,
         reading_only=reading_only,
         pending=pending,
@@ -206,6 +213,23 @@ def notebook(topic_id):
     if not os.path.exists(os.path.join(nb_dir, name)):
         abort(404)
     return send_from_directory(nb_dir, name, as_attachment=True)
+
+
+@course_bp.route('/video/<int:topic_id>')
+@login_required
+def video(topic_id):
+    """Инлайновая отдача mp4 с поддержкой Range-запросов для перемотки."""
+    topic = Topic.query.get_or_404(topic_id)
+    name = topic.video_filename
+    if not name or os.path.basename(name) != name:
+        abort(404)
+    video_dir = os.path.abspath(Settings.COURSE_VIDEO_DIR)
+    if not os.path.exists(os.path.join(video_dir, name)):
+        abort(404)
+    return send_from_directory(
+        video_dir, name,
+        as_attachment=False, conditional=True, mimetype='video/mp4',
+    )
 
 
 def _next_topic_url(current_topic):

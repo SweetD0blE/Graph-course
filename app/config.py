@@ -36,6 +36,9 @@ class Settings:
     COURSE_NB_DIR: str = (
         os.getenv("COURSE_NB_DIR") or str(BASE_DIR / "content" / "notebooks")
     )
+    COURSE_VIDEO_DIR: str = (
+        os.getenv("COURSE_VIDEO_DIR") or str(BASE_DIR / "content" / "videos")
+    )
 
     # Бэкап БД (см. app/services/backup.py).
     BACKUP_DIR: str = (

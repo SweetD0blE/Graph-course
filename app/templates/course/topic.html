@@ -7,6 +7,15 @@
     <h2>{{ topic.title }}</h2>
   </div>
 
+  {% if video_available %}
+    <article class="next-card" style="margin-bottom:18px">
+      <span class="card-label">Видео к теме</span>
+      <video controls preload="metadata" playsinline
+             style="display:block;width:100%;margin-top:12px;border-radius:14px"
+             src="{{ url_for('course.video', topic_id=topic.id) }}"></video>
+    </article>
+  {% endif %}
+
   <div id="topic-blocks">
   {% for stage in stages %}
     {% if stage.status == 'locked' %}
