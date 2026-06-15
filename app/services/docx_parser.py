@@ -8,8 +8,13 @@
 import re
 
 
-# Подтема вида «2.1.1.» / «2.1.3» — возобновление теории после блока «Тест».
-SUBTOPIC_RE = re.compile(r"^\s*\d+\.\d")
+# Подтема вида «2.1», «2.1.1», «2.2.1.1.1» — возобновление теории
+# после блока «Тест». Требуем минимум 2 уровня и явную границу после
+# числовой части (пробел/конец/завершающая точка), чтобы случайные
+# конструкции типа «1.5 миллиона» не ловились как структурный маркер
+# первой попавшейся цифрой. Многоуровневая вложенность допустима —
+# глубокие подзаголовки тоже корректно закрывают тест-блок.
+SUBTOPIC_RE = re.compile(r"^\s*\d+(?:\.\d+)+(?=[.\s]|$)")
 # Начало вопроса: «1. ...» (после точки — пробел, не цифра).
 QUESTION_RE = re.compile(r"^\s*(\d+)\.\s+(?!\d)(.+)$", re.S)
 # Вариант ответа: «A. ...» / «B) ...» (учитываем неразрывный пробел).
@@ -125,12 +130,12 @@ def _split_reading_segments(html):
         if removing:
             if name and SUBTOPIC_RE.match(text):
                 removing = False
-            elif name in ("h1", "h2", "h3") and not _test_heading_kind(text):
+            elif name in ("h1", "h2", "h3", "h4") and not _test_heading_kind(text):
                 removing = False
             else:
                 continue
 
-        if name in ("h1", "h2", "h3") and _test_heading_kind(text):
+        if name in ("h1", "h2", "h3", "h4") and _test_heading_kind(text):
             removing = True
             just_closed_test = True
             segments.append("".join(str(n) for n in current))
@@ -154,10 +159,23 @@ def parse_course_docx(path):
     """
     import mammoth
 
-    style_map = (
-        "p[style-name='heading 1'] => h1:fresh\n"
-        "p[style-name='Heading 1'] => h1:fresh"
-    )
+    # Маппим уровни Word-заголовков (англ. и рус. варианты — в зависимости
+    # от языка интерфейса Word у автора docx) на разные HTML-теги, чтобы
+    # вложенные подзаголовки не сливались в один огромный <h1>.
+    style_map = "\n".join((
+        "p[style-name='heading 1'] => h1:fresh",
+        "p[style-name='Heading 1'] => h1:fresh",
+        "p[style-name='heading 2'] => h2:fresh",
+        "p[style-name='Heading 2'] => h2:fresh",
+        "p[style-name='heading 3'] => h3:fresh",
+        "p[style-name='Heading 3'] => h3:fresh",
+        "p[style-name='heading 4'] => h4:fresh",
+        "p[style-name='Heading 4'] => h4:fresh",
+        "p[style-name='Заголовок 1'] => h1:fresh",
+        "p[style-name='Заголовок 2'] => h2:fresh",
+        "p[style-name='Заголовок 3'] => h3:fresh",
+        "p[style-name='Заголовок 4'] => h4:fresh",
+    ))
     with open(path, "rb") as f:
         result = mammoth.convert_to_html(f, style_map=style_map)
     segments = _split_reading_segments(result.value)
