@@ -108,7 +108,8 @@ python run.py
 |------------|------------|--------------|
 | `SECRET_KEY` | Ключ подписи сессий/CSRF | `dev-secret-key` |
 | `DATABASE_URL` | URI БД | `sqlite:///graph_course.db` |
-| `OUTLOOK_SENDER` | Адрес отправителя писем (прод) | — |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USE_TLS` | Корпоративный SMTP-релей | `SMTP.omega.sbrf.ru` / `2525` / `true` |
+| `SMTP_SENDER` / `SMTP_USER` / `SMTP_PASSWORD` | Отправитель и креды для релея (прод) | — |
 | `SESSION_LIFETIME_DAYS` | Срок жизни сессии | `3` |
 | `COURSE_PLAN_PATH` / `COURSE_DOCX_DIR` / `COURSE_NB_DIR` | Переопределение путей контента | каталог `content/` |
 | `PORT` / `FLASK_DEBUG` | Порт и режим отладки | `8000` / `0` |
@@ -118,13 +119,15 @@ python run.py
 
 ### Почта (код подтверждения)
 
-На боевом Windows-сервере письма уходят через Outlook COM (`pywin32`,
-в `requirements.txt` закомментирован). Если Outlook недоступен (Linux,
-локальная разработка, контейнер), код **не теряется** — он пишется в
-`app.log`:
+Письма уходят через корпоративный SMTP-релей (STARTTLS на порту
+`2525`, обязательная аутентификация). Хост/порт/TLS заданы дефолтами
+в `Settings`; `SMTP_SENDER`/`SMTP_USER`/`SMTP_PASSWORD` нужно прописать
+в `.env` боевого сервера. Если релей недоступен или креды неверны, код
+**не теряется** — он пишется в `app.log`:
 
 ```
-[MAIL→user@sva.example] Ваш логин: 10000001  Код подтверждения: 147215
+[MAIL→user@sva.example] Код подтверждения: Ваш табельный номер: 10000001
+Ваш код подтверждения: 147215
 ```
 
 ---
