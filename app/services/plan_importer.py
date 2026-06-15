@@ -13,6 +13,11 @@ import re
 
 import pandas as pd
 
+# Версия парсера docx (style_map, SUBTOPIC_RE, разделение заголовков
+# по уровням). Меняйте при правках логики парсинга, чтобы старые темы
+# с прежним docx_hash автоматически перепарсились при следующем старте.
+PARSER_VERSION = "v2"
+
 from app.config import Settings
 from app.services.app_logger import logger
 from app.services.docx_parser import carry_marks, parse_course_docx
@@ -131,7 +136,10 @@ def load_course_plan(db):
                 if os.path.exists(doc_path):
                     try:
                         with open(doc_path, "rb") as fh:
-                            digest = hashlib.md5(fh.read()).hexdigest()
+                            digest = (
+                                f"{PARSER_VERSION}:"
+                                f"{hashlib.md5(fh.read()).hexdigest()}"
+                            )
                         has_questions = bool(topic.questions)
                         if topic.docx_hash == digest and has_questions:
                             pass  # docx не менялся — отметки целы
