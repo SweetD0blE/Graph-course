@@ -12,7 +12,13 @@
       <span class="card-label">Видео к теме</span>
       <video controls preload="metadata" playsinline
              style="display:block;width:100%;margin-top:12px;border-radius:14px"
-             src="{{ url_for('course.video', topic_id=topic.id) }}"></video>
+             src="{{ url_for('course.video', topic_id=topic.id) }}">
+        {% if subtitle_available %}
+          <track kind="subtitles" srclang="ru" label="Русские"
+                 src="{{ url_for('course.subtitle', topic_id=topic.id) }}"
+                 default />
+        {% endif %}
+      </video>
     </article>
   {% endif %}
 

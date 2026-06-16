@@ -58,6 +58,12 @@ def topic(topic_id):
             os.path.join(Settings.COURSE_VIDEO_DIR, topic.video_filename)
         )
     )
+    subtitle_available = bool(
+        topic.subtitle_filename
+        and os.path.exists(
+            os.path.join(Settings.COURSE_VIDEO_DIR, topic.subtitle_filename)
+        )
+    )
     gradable_blocks = topic_test_blocks(topic)
     all_passed = passed_blocks(current_user)
     passed = {b for (tid, b) in all_passed if tid == topic.id}
@@ -111,6 +117,7 @@ def topic(topic_id):
         topic=topic,
         nb_available=nb_available,
         video_available=video_available,
+        subtitle_available=subtitle_available,
         stages=stages,
         reading_only=reading_only,
         pending=pending,
@@ -229,6 +236,23 @@ def video(topic_id):
     return send_from_directory(
         video_dir, name,
         as_attachment=False, conditional=True, mimetype='video/mp4',
+    )
+
+
+@course_bp.route('/subtitle/<int:topic_id>')
+@login_required
+def subtitle(topic_id):
+    """Инлайновая отдача WebVTT-субтитров рядом с видео темы."""
+    topic = Topic.query.get_or_404(topic_id)
+    name = topic.subtitle_filename
+    if not name or os.path.basename(name) != name:
+        abort(404)
+    video_dir = os.path.abspath(Settings.COURSE_VIDEO_DIR)
+    if not os.path.exists(os.path.join(video_dir, name)):
+        abort(404)
+    return send_from_directory(
+        video_dir, name,
+        as_attachment=False, mimetype='text/vtt',
     )
 
 
