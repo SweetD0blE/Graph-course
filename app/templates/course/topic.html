@@ -40,13 +40,15 @@
                 action="{{ url_for('course.block_test', topic_id=topic.id, block=stage.order) }}"
                 style="margin-top:16px">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <div class="section-heading">
+            <div class="section-heading section-heading--center">
               <span class="card-label">
                 {{ 'Финальный тест' if stage.is_final else 'Тест ' ~ stage.order }}
               </span>
-              <p>Отметьте все верные варианты. Для зачёта нужно ответить
-                 правильно на все вопросы.</p>
             </div>
+            <p class="test-notice">
+              Отметьте все верные варианты. Для зачёта нужно ответить
+              правильно на все вопросы.
+            </p>
             {% for q in stage.questions %}
               <fieldset class="quiz-question">
                 <legend><strong>{{ loop.index }}. {{ q.text }}</strong></legend>

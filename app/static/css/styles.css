@@ -574,6 +574,14 @@ body.light-theme .progress-bar {
   margin: 8px auto 0;
 }
 
+.test-notice {
+  text-align: center;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 15px;
+  margin: 4px 0 18px;
+}
+
 .course-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
@@ -793,7 +801,9 @@ body.light-theme .tag--primary {
 .topic-content ol { margin: .7em 0 .7em 1.4em; }
 .topic-content img {
   max-width: 100%;
+  width: auto;
   height: auto;
+  max-height: 400px;
   display: block;
   margin: 1em auto;
   border-radius: var(--radius-md);
