@@ -33,10 +33,10 @@ def _split_topic_code(raw):
 
 
 def _pick_materials(cell):
-    """Из «Материалов на выход» достаёт имена .docx, .ipynb и .mp4."""
-    doc = nb = video = None
+    """Из «Материалов на выход» достаёт имена .docx, .ipynb, .mp4, .vtt."""
+    doc = nb = video = subtitle = None
     if cell is None or (isinstance(cell, float) and pd.isna(cell)):
-        return doc, nb, video
+        return doc, nb, video, subtitle
     for part in re.split(r"[\n,;]+", str(cell)):
         part = part.strip()
         low = part.lower()
@@ -46,7 +46,9 @@ def _pick_materials(cell):
             nb = part
         elif low.endswith(".mp4") and video is None:
             video = part
-    return doc, nb, video
+        elif low.endswith(".vtt") and subtitle is None:
+            subtitle = part
+    return doc, nb, video, subtitle
 
 
 def load_course_plan(db):
@@ -113,7 +115,9 @@ def load_course_plan(db):
             outcome = (
                 str(row.iloc[6]).strip() if not pd.isna(row.iloc[6]) else None
             )
-            doc_name, nb_name, video_name = _pick_materials(row.iloc[7])
+            doc_name, nb_name, video_name, sub_name = _pick_materials(
+                row.iloc[7]
+            )
 
             topic = Topic.query.filter_by(code=code).first()
             if topic is None:
@@ -128,6 +132,7 @@ def load_course_plan(db):
             topic.doc_filename = doc_name
             topic.notebook_filename = nb_name
             topic.video_filename = video_name
+            topic.subtitle_filename = sub_name
             topic.order = pos
             db.session.flush()
 

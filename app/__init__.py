@@ -116,6 +116,12 @@ def _ensure_schema() -> None:
         ))
         db.session.commit()
         logger.info('Схема обновлена: topic.video_filename добавлена')
+    if topic_cols and 'subtitle_filename' not in topic_cols:
+        db.session.execute(text(
+            "ALTER TABLE topic ADD COLUMN subtitle_filename VARCHAR(255)"
+        ))
+        db.session.commit()
+        logger.info('Схема обновлена: topic.subtitle_filename добавлена')
 
     q_cols = {
         row[1]

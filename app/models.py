@@ -79,6 +79,7 @@ class Topic(db.Model):
     doc_filename = db.Column(db.String(255))
     notebook_filename = db.Column(db.String(255))
     video_filename = db.Column(db.String(255))
+    subtitle_filename = db.Column(db.String(255))
     notebook_kind = db.Column(db.String(10))  # устар.; не используется
     docx_hash = db.Column(db.String(64))
     html_content = db.Column(db.Text)
