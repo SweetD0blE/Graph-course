@@ -19,6 +19,11 @@ from app.services.app_logger import logger
 course_bp = Blueprint('course', __name__, url_prefix='/course')
 
 
+def _is_admin(user):
+    """Тот же признак, что использует admin_required в admin_routes."""
+    return user.is_authenticated and getattr(user, 'status', 0) == 1
+
+
 @course_bp.route('/')
 @login_required
 def index():
@@ -33,6 +38,14 @@ def index():
         section_states[s.id] = 'opened' if (idx == 0 or prev_ok) else 'locked'
         prev_ok = prev_ok and section_completed(s, passed_ids)
     topic_states = course_topic_states(sections, passed_ids)
+    # Админы видят весь курс без замков — пройденное помечаем,
+    # остальное считаем доступным для просмотра.
+    if _is_admin(current_user):
+        section_states = {s.id: 'opened' for s in sections}
+        topic_states = {
+            t.id: ('passed' if t.id in passed_ids else 'open')
+            for s in sections for t in s.topics
+        }
     return render_template(
         'course/list.html',
         sections=sections,
@@ -82,11 +95,12 @@ def topic(topic_id):
 
     stages = []
     unlocked = True
+    admin = _is_admin(current_user)
     for blk in blocks:
         n = blk.order
         has_test = n in gradable_blocks
         block_done = n in passed
-        if not unlocked:
+        if not unlocked and not admin:
             status = 'locked'
         elif has_test and block_done:
             status = 'done'
@@ -158,7 +172,7 @@ def block_test(topic_id, block):
         b for (tid, b) in passed_blocks(current_user) if tid == topic.id
     }
     prior = {b for b in topic_test_blocks(topic) if b < block}
-    if not prior.issubset(passed_here):
+    if not prior.issubset(passed_here) and not _is_admin(current_user):
         return respond(
             'Сначала пройдите предыдущие тесты.', 'warning', ok=False,
         )
