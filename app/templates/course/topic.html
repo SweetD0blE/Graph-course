@@ -1,6 +1,26 @@
 {% extends 'base.html' %}
 {% block title %}{{ topic.code }} {{ topic.title }} — Graph Course{% endblock %}
 {% block content %}
+<div class="topic-layout">
+{% if toc %}
+  <aside class="topic-toc" aria-label="Оглавление темы">
+    <h3 class="topic-toc__title">Содержание</h3>
+    <ol class="topic-toc__list">
+      {% for item in toc %}
+        <li class="topic-toc__item topic-toc__item--lvl{{ item.level }}">
+          {% if item.locked %}
+            <span class="topic-toc__link topic-toc__link--locked"
+                  title="Пройдите тест предыдущего блока"
+                  aria-disabled="true">{{ item.text }}</span>
+          {% else %}
+            <a class="topic-toc__link"
+               href="#{{ item.anchor }}">{{ item.text }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </aside>
+{% endif %}
 <section class="dashboard">
   <div class="section-heading">
     <span class="card-label">Тема {{ topic.code }}</span>
@@ -119,4 +139,5 @@
     {% endif %}
   </div>
 </section>
+</div>
 {% endblock %}

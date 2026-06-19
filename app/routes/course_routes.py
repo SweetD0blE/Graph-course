@@ -1,4 +1,5 @@
 import os
+import re
 
 from flask import (
     Blueprint, render_template, abort, request, redirect, url_for, flash,
@@ -22,6 +23,54 @@ course_bp = Blueprint('course', __name__, url_prefix='/course')
 def _is_admin(user):
     """Тот же признак, что использует admin_required в admin_routes."""
     return user.is_authenticated and getattr(user, 'status', 0) == 1
+
+
+_SLUG_RE = re.compile(r'[^\wЀ-ӿ\-]+', re.UNICODE)
+
+
+def _slugify(text):
+    s = re.sub(r'\s+', '-', text.strip().lower())
+    s = _SLUG_RE.sub('', s)
+    return s[:80] or 'h'
+
+
+def _build_toc(stages):
+    """Извлекает h1–h3 из stage.html, проставляет якоря (id) на месте
+    и возвращает плоский список TOC-записей с уровнем, текстом, якорем
+    и статусом блока. Заблокированные блоки тоже попадают в TOC —
+    пользователь видит структуру темы, но клик по ним заблокирован
+    в шаблоне.
+    """
+    from bs4 import BeautifulSoup
+
+    toc = []
+    seen = set()
+    for stage in stages:
+        html = stage.get('html') or ''
+        if not html.strip():
+            continue
+        soup = BeautifulSoup(html, 'html.parser')
+        for h in soup.find_all(['h1', 'h2', 'h3']):
+            text = h.get_text(strip=True)
+            if not text:
+                continue
+            base = f"toc-{stage['order']}-{_slugify(text)}"
+            anchor = base
+            n = 2
+            while anchor in seen:
+                anchor = f'{base}-{n}'
+                n += 1
+            seen.add(anchor)
+            h['id'] = anchor
+            toc.append({
+                'level': int(h.name[1]),
+                'text': text,
+                'anchor': anchor,
+                'stage_order': stage['order'],
+                'locked': stage['status'] == 'locked',
+            })
+        stage['html'] = str(soup)
+    return toc
 
 
 @course_bp.route('/')
@@ -126,6 +175,7 @@ def topic(topic_id):
     reading_only = not topic.questions and has_reading(topic)
     topic_done = topic_passed(topic, current_user, all_passed)
     next_url = _next_topic_url(topic) if topic_done else None
+    toc = _build_toc(stages)
     return render_template(
         'course/topic.html',
         topic=topic,
@@ -133,6 +183,7 @@ def topic(topic_id):
         video_available=video_available,
         subtitle_available=subtitle_available,
         stages=stages,
+        toc=toc,
         reading_only=reading_only,
         pending=pending,
         topic_done=topic_done,
