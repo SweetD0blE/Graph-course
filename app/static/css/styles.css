@@ -582,6 +582,83 @@ body.light-theme .progress-bar {
   margin: 4px 0 18px;
 }
 
+/* Оглавление темы — sticky-сайдбар слева. */
+.topic-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 26px;
+}
+.topic-layout > .dashboard {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+.topic-toc {
+  flex: 0 0 240px;
+  position: sticky;
+  top: 110px;
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  padding: 16px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 14px;
+}
+.topic-toc__title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.topic-toc__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.topic-toc__item {
+  margin: 2px 0;
+  line-height: 1.35;
+}
+.topic-toc__item--lvl2 { padding-left: 12px; }
+.topic-toc__item--lvl3 { padding-left: 24px; }
+.topic-toc__link {
+  display: block;
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--text);
+  text-decoration: none;
+  word-break: break-word;
+}
+.topic-toc__link:hover {
+  background: var(--surface-strong);
+  color: var(--primary);
+}
+.topic-toc__link--locked {
+  color: var(--muted);
+  opacity: .6;
+  cursor: not-allowed;
+}
+.topic-toc__link--locked:hover {
+  background: transparent;
+  color: var(--muted);
+}
+.topic-toc__link--locked::before {
+  content: '🔒';
+  margin-right: 6px;
+}
+/* Чтобы якорный заголовок не уезжал под sticky-шапку. */
+.topic-content :is(h1, h2, h3) {
+  scroll-margin-top: 110px;
+}
+
+@media (max-width: 1024px) {
+  .topic-layout { display: block; }
+  .topic-toc { display: none; }
+}
+
 .course-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
