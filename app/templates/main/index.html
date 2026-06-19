@@ -80,11 +80,11 @@
           </div>
         </div>
 
-        <div class="hero__visual" aria-label="Визуализация графа курса">
+        <div class="hero__visual" aria-label="Структура курса">
           <div class="graph-card">
             <div class="graph-card__top">
               <div>
-                <span class="card-label">Learning graph</span>
+                <span class="card-label">Структура курса</span>
                 <h2>Маршрут курса</h2>
               </div>
               {% if current_user.is_authenticated %}
@@ -94,34 +94,52 @@
               {% endif %}
             </div>
 
-            <div class="graph-map" data-graph-map>
-              <svg class="graph-lines" data-graph-lines aria-hidden="true"></svg>
-
-              <button class="graph-node graph-node--done graph-node--1" data-node="basics" type="button">
-                <span>1</span>
-                <small>Теория</small>
-              </button>
-
-              <button class="graph-node graph-node--active graph-node--2" data-node="metrics" type="button">
-                <span>2</span>
-                <small>Библиотеки</small>
-              </button>
-
-              <button class="graph-node graph-node--practice graph-node--3" data-node="practice" type="button">
-                <span>P</span>
-                <small>Практика</small>
-              </button>
-
-              <button class="graph-node graph-node--locked graph-node--4" data-node="algorithms" type="button">
-                <span>3</span>
-                <small>Алгоритмы</small>
-              </button>
-
-              <button class="graph-node graph-node--test graph-node--5" data-node="test" type="button">
-                <span>T</span>
-                <small>Метрики</small>
-              </button>
-            </div>
+            {% if sections %}
+              <ol class="course-tree">
+                {% for section in sections %}
+                  {% set sstate = section_states[section.id] %}
+                  <li class="course-tree__section {% if sstate == 'locked' %}is-locked{% endif %}">
+                    <div class="course-tree__section-head">
+                      <span class="course-tree__num">{{ section.number }}</span>
+                      <span class="course-tree__name">{{ section.title }}</span>
+                      {% if sstate == 'locked' %}
+                        <span class="course-tree__lock" aria-label="Закрыто">🔒</span>
+                      {% endif %}
+                    </div>
+                    {% if section.topics %}
+                      <ol class="course-tree__topics">
+                        {% for topic in section.topics %}
+                          {% set tstate = topic_states[topic.id] %}
+                          {% set locked = (sstate == 'locked') or (tstate == 'locked') %}
+                          <li class="course-tree__topic">
+                            {% if locked %}
+                              <span class="course-tree__link course-tree__link--locked"
+                                    title="Откроется после прохождения предыдущего"
+                                    aria-disabled="true">
+                                <span class="course-tree__code">{{ topic.code }}</span>
+                                <span class="course-tree__title">{{ topic.title }}</span>
+                                <span class="course-tree__lock">🔒</span>
+                              </span>
+                            {% else %}
+                              <a class="course-tree__link {% if tstate == 'passed' %}course-tree__link--passed{% endif %}"
+                                 href="{{ url_for('course.topic', topic_id=topic.id) }}">
+                                <span class="course-tree__code">{{ topic.code }}</span>
+                                <span class="course-tree__title">{{ topic.title }}</span>
+                                {% if tstate == 'passed' %}
+                                  <span class="course-tree__tick" aria-label="Пройдено">✓</span>
+                                {% endif %}
+                              </a>
+                            {% endif %}
+                          </li>
+                        {% endfor %}
+                      </ol>
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <p class="course-tree__empty">План курса ещё загружается.</p>
+            {% endif %}
 
             <div class="progress-widget" id="progress">
               {% if current_user.is_authenticated %}

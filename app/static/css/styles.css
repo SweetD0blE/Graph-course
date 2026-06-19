@@ -354,154 +354,116 @@ p {
   background: rgba(74, 222, 128, 0.12);
 }
 
-/* Заменить в assets/css/styles.css стили graph-map / graph-lines / graph-node на этот блок */
-
-/* Карта графа */
-.graph-map {
-  position: relative;
-  height: 340px;
-  margin: 22px 0;
-  isolation: isolate;
+/* Дерево разделов и тем в hero (вместо декоративного графа). */
+.course-tree {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+  max-height: 420px;
+  overflow-y: auto;
+  font-size: 14px;
 }
-
-/* SVG-слой с линиями. Координаты линий теперь выставляет JS в пикселях. */
-.graph-lines {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
+.course-tree__section + .course-tree__section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
 }
-
-.graph-lines line {
-  stroke: rgba(255, 255, 255, 0.24);
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-
-body.light-theme .graph-lines line {
-  stroke: rgba(15, 23, 42, 0.22);
-}
-
-/* Узлы графа */
-.graph-node {
-  position: absolute;
-  z-index: 1;
-  box-sizing: border-box;
+.course-tree__section-head {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px;
+  font-weight: 700;
+  color: var(--text);
+}
+.course-tree__num {
+  flex: 0 0 28px;
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  width: 112px;
-  height: 82px;
-  padding: 10px 12px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  color: var(--text);
-  background: var(--surface-solid);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.20);
-  transform: translate(-50%, -50%);
-}
-
-/*
-  Важно:
-  left/top ниже — это только позиция узлов.
-  Линии к ним больше НЕ прописываются руками.
-  JS сам берёт реальные координаты этих карточек.
-*/
-.graph-node--1 {
-  left: 19%;
-  top: 25%;
-}
-
-.graph-node--2 {
-  left: 50%;
-  top: 45%;
-}
-
-.graph-node--3 {
-  left: 24%;
-  top: 74%;
-}
-
-.graph-node--4 {
-  left: 84%;
-  top: 24%;
-}
-
-.graph-node--5 {
-  left: 78%;
-  top: 72%;
-}
-
-.graph-node span,
-.graph-node small {
-  display: block;
-}
-
-.graph-node span {
-  margin-bottom: 5px;
-  font-size: 22px;
-  font-weight: 900;
-}
-
-.graph-node small {
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--muted);
-  font-size: 12px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--primary);
+  font-size: 13px;
   font-weight: 800;
 }
-
-.graph-node--done {
-  border-color: rgba(74, 222, 128, 0.36);
-  background: rgba(74, 222, 128, 0.12);
+.course-tree__name {
+  flex: 1;
+  min-width: 0;
 }
-
-.graph-node--active {
-  border-color: rgba(85, 166, 255, 0.46);
-  background: rgba(85, 166, 255, 0.15);
+.course-tree__section.is-locked .course-tree__name,
+.course-tree__section.is-locked .course-tree__num {
+  color: var(--muted);
+  opacity: .7;
 }
-
-.graph-node--practice {
-  border-color: rgba(155, 124, 255, 0.44);
-  background: rgba(155, 124, 255, 0.14);
+.course-tree__topics {
+  list-style: none;
+  padding: 4px 0 4px 36px;
+  margin: 0;
+  border-left: 1px dashed var(--line);
+  margin-left: 14px;
 }
-
-.graph-node--test {
-  border-color: rgba(245, 158, 11, 0.42);
-  background: rgba(245, 158, 11, 0.13);
+.course-tree__topic + .course-tree__topic {
+  margin-top: 2px;
 }
-
-.graph-node--locked {
-  opacity: 0.72;
+.course-tree__link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  line-height: 1.3;
 }
-
-.graph-node.is-selected {
-  outline: 2px solid rgba(85, 166, 255, 0.55);
-  outline-offset: 3px;
+.course-tree__link:hover {
+  background: var(--surface-strong);
+  color: var(--primary);
+}
+.course-tree__code {
+  flex: 0 0 auto;
+  min-width: 38px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+}
+.course-tree__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.course-tree__tick {
+  flex: 0 0 auto;
+  color: #4ade80;
+  font-weight: 900;
+}
+.course-tree__lock {
+  flex: 0 0 auto;
+  opacity: .8;
+}
+.course-tree__link--passed .course-tree__title { color: #c7f9e0; }
+.course-tree__link--locked {
+  color: var(--muted);
+  opacity: .6;
+  cursor: not-allowed;
+}
+.course-tree__link--locked:hover {
+  background: transparent;
+  color: var(--muted);
+}
+.course-tree__empty {
+  margin: 18px 0;
+  color: var(--muted);
 }
 
 @media (max-width: 620px) {
-  .graph-map {
-    height: 300px;
-  }
-
-  .graph-node {
-    width: 92px;
-    height: 72px;
-  }
-
-  .graph-node span {
-    font-size: 20px;
-  }
+  .course-tree { max-height: 320px; }
+  .course-tree__topics { padding-left: 24px; }
 }
 
 .progress-widget {
@@ -828,15 +790,6 @@ body.light-theme .tag--primary {
   .graph-card {
     min-height: 490px;
     padding: 18px;
-  }
-
-  .graph-map {
-    height: 300px;
-  }
-
-  .graph-node {
-    width: 92px;
-    height: 72px;
   }
 
   .hero__meta {
