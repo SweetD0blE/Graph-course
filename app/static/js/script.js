@@ -138,14 +138,8 @@ const graphConnections = [
 ];
 
 function drawAllGraphs() {
-  drawConnectedGraph({
-    mapSelector: "[data-graph-map]",
-    svgSelector: "[data-graph-lines]",
-    nodeSelector: "[data-node]",
-    nodeDataKey: "node",
-    connections: graphConnections,
-  });
-
+  // На главной граф убран — дерево курса не требует SVG-линий.
+  // Декоративный граф остался только на странице входа (auth).
   drawConnectedGraph({
     mapSelector: "[data-auth-graph-map]",
     svgSelector: "[data-auth-graph-lines]",
@@ -166,17 +160,10 @@ window.addEventListener("resize", scheduleGraphDraw);
 if ("ResizeObserver" in window) {
   const observer = new ResizeObserver(scheduleGraphDraw);
 
-  document.querySelectorAll("[data-graph-map], [data-auth-graph-map], [data-node], [data-auth-node]").forEach((element) => {
+  document.querySelectorAll("[data-auth-graph-map], [data-auth-node]").forEach((element) => {
     observer.observe(element);
   });
 }
-
-document.querySelectorAll(".graph-node").forEach((node) => {
-  node.addEventListener("click", () => {
-    document.querySelectorAll(".graph-node").forEach((item) => item.classList.remove("is-selected"));
-    node.classList.add("is-selected");
-  });
-});
 
 // Табельный номер: только цифры (ввод и вставка), максимум 8 знаков.
 document.addEventListener("input", (e) => {
