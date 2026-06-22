@@ -33,7 +33,7 @@ body.light-theme {
   --primary-strong: #1d4ed8;
   --cyan: #0891b2;
   --violet: #7c3aed;
-  --green: #059669;
+  --green: #047857;
   --orange: #d97706;
   --shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
   --option-checked: rgba(37, 99, 235, 0.10);
@@ -439,14 +439,23 @@ p {
 }
 .course-tree__tick {
   flex: 0 0 auto;
-  color: #4ade80;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-size: 11px;
   font-weight: 900;
+  line-height: 1;
 }
 .course-tree__lock {
   flex: 0 0 auto;
   opacity: .8;
 }
-.course-tree__link--passed .course-tree__title { color: #c7f9e0; }
+.course-tree__link--passed .course-tree__title { color: var(--green); font-weight: 700; }
 .course-tree__link--locked {
   color: var(--muted);
   opacity: .6;
@@ -542,6 +551,63 @@ body.light-theme .progress-bar {
   font-weight: 600;
   font-size: 15px;
   margin: 4px 0 18px;
+}
+
+/* Поздравительная карточка после прохождения темы. */
+.topic-done-card {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 40px 32px;
+  min-height: auto;
+  border: 1px solid rgba(4, 120, 87, 0.30);
+  background: linear-gradient(180deg,
+    rgba(74, 222, 128, 0.10),
+    rgba(74, 222, 128, 0.02));
+}
+body.light-theme .topic-done-card {
+  border-color: rgba(4, 120, 87, 0.28);
+  background: linear-gradient(180deg,
+    rgba(4, 120, 87, 0.08),
+    rgba(4, 120, 87, 0.02));
+}
+.topic-done-card__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 10px 28px rgba(4, 120, 87, 0.35);
+}
+.topic-done-card__title {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+.topic-done-card__text {
+  margin: 0;
+  max-width: 420px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.topic-done-card__actions {
+  margin-top: 8px;
+}
+.topic-done-card__actions .btn {
+  min-height: 48px;
+  padding: 0 26px;
+  font-size: 15px;
 }
 
 /* Оглавление темы — sticky-сайдбар слева. */

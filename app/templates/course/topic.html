@@ -103,10 +103,18 @@
   {% endfor %}
   </div>
 
-  <article class="next-card" data-topic-done-card
-           {% if not topic_done %}hidden{% endif %} style="margin-top:18px">
-    <p><span class="tag tag--success">✓ Тема пройдена</span></p>
-    <div class="next-card__actions" style="margin-top:12px">
+  <article class="next-card topic-done-card" data-topic-done-card
+           {% if not topic_done %}hidden{% endif %}>
+    <div class="topic-done-card__icon" aria-hidden="true">✓</div>
+    <h2 class="topic-done-card__title">Тема пройдена!</h2>
+    <p class="topic-done-card__text">
+      {% if next_url %}
+        Отличная работа. Можно сразу перейти к следующей теме.
+      {% else %}
+        Поздравляем — это была последняя тема курса.
+      {% endif %}
+    </p>
+    <div class="topic-done-card__actions">
       <a class="btn btn--primary" data-next-topic
          href="{{ next_url or url_for('course.index') }}">
         {{ 'К следующей теме' if next_url else 'К списку тем' }}
