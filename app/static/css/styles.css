@@ -568,6 +568,9 @@ body.light-theme .progress-bar {
     rgba(74, 222, 128, 0.10),
     rgba(74, 222, 128, 0.02));
 }
+/* display:flex выше перебивает браузерное [hidden]{display:none} —
+   возвращаем скрытие, пока тема не пройдена (JS снимает hidden). */
+.topic-done-card[hidden] { display: none; }
 body.light-theme .topic-done-card {
   border-color: rgba(4, 120, 87, 0.28);
   background: linear-gradient(180deg,
